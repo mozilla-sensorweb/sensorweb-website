@@ -111,7 +111,7 @@ interface SidebarProps {
 
 //import { observable} from 'mobx';
 
-//@observer
+@observer
 export default class Sidebar extends React.Component<SidebarProps, SidebarState> {
   el: HTMLElement;
   offset: number;

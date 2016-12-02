@@ -1,0 +1,27 @@
+bindDependencies http://localhost:3001/build/sensorweb-www.js:31585:6
+	trackDerivedFunction http://localhost:3001/build/sensorweb-www.js:31547:14
+	Reaction</Reaction.prototype.track http://localhost:3001/build/sensorweb-www.js:31867:10
+	reactiveRender http://localhost:3001/build/sensorweb-www.js:29909:9
+	ReactCompositeComponentMixin._renderValidatedComponentWithoutOwnerOrContext/renderedComponent< http://localhost:3001/build/sensorweb-www.js:24037:17
+	measureLifeCyclePerf http://localhost:3001/build/sensorweb-www.js:23318:13
+	ReactCompositeComponentMixin._renderValidatedComponentWithoutOwnerOrContext http://localhost:3001/build/sensorweb-www.js:24036:28
+	ReactCompositeComponentMixin._renderValidatedComponent http://localhost:3001/build/sensorweb-www.js:24063:30
+	ReactCompositeComponentMixin._updateRenderedComponent http://localhost:3001/build/sensorweb-www.js:23987:32
+	ReactCompositeComponentMixin._performComponentUpdate http://localhost:3001/build/sensorweb-www.js:23965:6
+	ReactCompositeComponentMixin.updateComponent http://localhost:3001/build/sensorweb-www.js:23886:8
+	ReactCompositeComponentMixin.performUpdateIfNecessary http://localhost:3001/build/sensorweb-www.js:23802:8
+	ReactReconciler.performUpdateIfNecessary http://localhost:3001/build/sensorweb-www.js:16069:6
+	runBatchedUpdates http://localhost:3001/build/sensorweb-www.js:15666:6
+	Mixin.perform http://localhost:3001/build/sensorweb-www.js:16951:14
+	Mixin.perform http://localhost:3001/build/sensorweb-www.js:16951:14
+	.perform http://localhost:3001/build/sensorweb-www.js:15605:13
+	flushBatchedUpdates http://localhost:3001/build/sensorweb-www.js:15688:8
+	bound  self-hosted:929:17
+	Mixin.closeAll http://localhost:3001/build/sensorweb-www.js:17017:12
+	Mixin.perform http://localhost:3001/build/sensorweb-www.js:16964:12
+	ReactDefaultBatchingStrategy.batchedUpdates http://localhost:3001/build/sensorweb-www.js:25821:8
+	enqueueUpdate http://localhost:3001/build/sensorweb-www.js:15716:6
+	enqueueUpdate http://localhost:3001/build/sensorweb-www.js:24786:4
+	ReactUpdateQueue.enqueueSetState http://localhost:3001/build/sensorweb-www.js:24971:6
+	ReactComponent.prototype.setState http://localhost:3001/build/sensorweb-www.js:9947:4
+	componentDidMount/<

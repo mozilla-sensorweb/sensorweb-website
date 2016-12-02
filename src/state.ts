@@ -165,7 +165,7 @@ export class Sensor {
 }
 
 export class SensorReading {
-  date: Date;
+  @observable date: Date;
   pm: number;
   temperature?: number;
   humidity?: number;
