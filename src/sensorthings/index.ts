@@ -12,6 +12,7 @@ export default class STClient {
 
   async loadAll() {
     const datastreamList = await this.request<ResponseList<IDatastream>>('GET', '/Datastreams');
+    datastreamList.value = datastreamList.value.filter(x => x['@iot.id'] === '50');
 
     const observationLinks = datastreamList.value.map(item => item['Observations@iot.navigationLink']);
     const observations = await Promise.all(observationLinks.slice(0, 5).map(link => this.request<ResponseList<IObservation>>('GET', link)));
@@ -34,8 +35,9 @@ export default class STClient {
         new Location(loc.location.coordinates[0], loc.location.coordinates[1]));
       obs.forEach((o) => {
         let r = new SensorReading(moment(o.phenomenonTime).toDate()); // XXX: or resultTime?
-        // XXX: OGCSensorThings returns a string, but maybe we return number?
-        r.pm = typeof o.result === 'number' ? o.result : parseInt(o.result);
+        // XXX: OGCSensorThings returns a string, but our spec says we should return a number?
+        r.pm = (typeof o.result === 'number' ? o.result : parseInt(o.result)) | 0;
+        r.temperature = r.pm; // xxx
         sensor.addReading(r);
       });
       return sensor;
@@ -47,6 +49,7 @@ export default class STClient {
     if (!/:\/\//.test(path)) {
       path = this.basePath + path;
     }
+    path = path.replace(':8000', ''); // XXX
     return new Promise<T>((resolve, reject) => {
       let request = new XMLHttpRequest();
       request.addEventListener('load', (evt: ProgressEvent) => {

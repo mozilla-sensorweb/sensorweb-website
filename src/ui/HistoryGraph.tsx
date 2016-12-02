@@ -15,7 +15,7 @@ interface HistorySvgGraphProps {
   mode: GraphMode;
 }
 
-type GraphMode = 'day' | 'week' | 'month';
+type GraphMode = 'hour' | 'day' | 'week' | 'month';
 
 
 @renderOnResize
@@ -36,11 +36,14 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
 
   constructor(props: HistorySvgGraphProps) {
     super(props);
-    this.updateExtent(props.data);
+    this.updateExtent(props);
   }
 
   render() {
-    console.log('Render history!')
+    console.log('Render history!');
+    if (this.props.data.length < 2) {
+      return <div />;
+    }
     let stops: any[] = [];
     const steps = 5;
     const min = this.yExtent[0];
@@ -53,7 +56,9 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
       stops.push(<stop key={i} offset={(progress * 100 | 0)+ '%'} stopColor={pmToGradientColor(step)} stopOpacity={opacity} />);
     }
     return (
-      <svg className={['HistorySvgGraph', this.props.theme].join(' ')} onMouseMove={this.onMouseMove as any}>
+      <svg className={['HistorySvgGraph', this.props.theme].join(' ')}
+        onMouseMove={this.onMouseMove as any}
+        onTouchMove={this.onMouseMove as any}>
         <defs>
           {/*<clipPath id="clip">
             <rect ref={el => this.clipRect = el} width="0" height="0" />
@@ -90,34 +95,50 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
   // }
 
   componentWillReceiveProps(nextProps: HistorySvgGraphProps) {
-    this.updateExtent(nextProps.data);
+    this.updateExtent(nextProps);
   }
 
-  updateExtent(data: SensorReading[]) {
+  modeToDuration = {
+    hour: 1000 * 60 * 60,
+    day: 1000 * 60 * 60 * 24,
+    week: 1000 * 60 * 60 * 24 * 7,
+    month: 1000 * 60 * 60 * 24 * 31,
+  }
+
+  updateExtent(props: HistorySvgGraphProps) {
     console.log('update extent!');
-    this.xExtent = d3.extent(data, d => d.date) as Date[];
-    this.yExtent = d3.extent(data, d => d.pm) as number[];
+    this.xExtent = d3.extent(props.data, d => d.date) as Date[];
+    //this.xExtent[0] = new Date(Math.min(this.xExtent[0].getTime(), Date.now() - (this.modeToDuration as any)[props.mode]));
+    //this.xExtent[1] = new Date();
+    console.log('extent', this.xExtent)
+    this.yExtent = d3.extent(props.data, d => d.pm) as number[];
   }
 
   updatePointer(x: number) {
-    let svg = this.pointerEl.ownerSVGElement;
-    let pt = svg.createSVGPoint();
-    pt.x = x;
-    pt.y = 0;
-    pt = pt.matrixTransform(svg.getScreenCTM().inverse());
-    pt.x = pt.x - this.margin.left;
     const width = this.state.width - this.margin.right - this.margin.left;
-    let scale = d3.scaleLinear().domain([0, width]).rangeRound([0, this.props.data.length]);
-    if (pt.x >= 0 && pt.x < width) {
-      this.pointerEl.setAttribute('transform', `translate(${pt.x}, 10)`);
-      const pm = this.props.data[scale(pt.x)].pm;
+    let scale = d3.scaleLinear().domain([0, width]).rangeRound([0, this.props.data.length - 1]);
+    if (x >= 0 && x < width) {
+      this.pointerEl.setAttribute('transform', `translate(${x}, 10)`);
+      if (!this.props.data[scale(x)]) {
+        console.log('DATA', x, scale(x), this.props.data.length);
+      }
+      const pm = this.props.data[scale(x)].pm;
       this.pointerEl.setAttribute('fill', pmToColor(pm, 'light'));
-      this.pointerEl.querySelector('.pointerText')!.textContent = pm + '';
+      this.pointerEl.querySelector('.pointerText')!.textContent = pm.toFixed(0) + '';
     }
   }
 
-  onMouseMove = (evt: MouseEvent) => {
-    this.updatePointer(evt.clientX);
+
+  onMouseMove = (evt: any) => {
+    let svg = this.pointerEl.ownerSVGElement;
+    let pt = svg.createSVGPoint();
+    pt.x = evt.touches ? evt.touches[0].pageX : evt.pageX;
+    pt.y = 0;
+    pt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    pt.x = pt.x - this.margin.left;
+    this.updatePointer(pt.x);
+    evt.stopPropagation(); // xxx
+    evt.preventDefault();
   }
 
   componentDidUpdate() {
@@ -126,10 +147,9 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
     }
     const width = this.state.width - this.margin.right - this.margin.left;
     const height = this.state.height - this.margin.top - this.margin.bottom;
-    const xExtent = this.xExtent;
     const xScale = d3.scaleTime()
       .range([0, width])
-      .domain(xExtent);
+      .domain(this.xExtent);
     const yScale = d3.scaleLinear()
       .range([height, 0])
       .domain(this.yExtent as number[]);
@@ -141,6 +161,9 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
     let axis = d3.axisBottom(xScale).tickSize(0);
 
     switch (this.props.mode) {
+      case 'hour':
+        axis.ticks(3).tickFormat(d => moment(d).format('h:mm A'));
+        break;
       case 'day':
         axis.ticks(4).tickFormat(d => moment(d).format('h A'));
         break;
@@ -196,6 +219,8 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
       .attr('clip-path', 'url(#clip)');
       //.attr('transform', 'scale(' + transform.k + ', 1)')
 
+    this.updatePointer(width * .5);
+
   }
 }
 
@@ -208,43 +233,28 @@ interface HistoryGraphProps {
 @observer
 export default class HistoryGraph extends React.Component<HistoryGraphProps, {}> {
   @observable mode: GraphMode;
-  @observable samples: SensorReading[] = asFlat([]);
-  @observable loading: boolean = true;
 
   @action async setMode(mode: GraphMode) {
-    this.loading = true;
     this.mode = mode;
-    const start = moment().subtract(1, mode).toDate();
-    const end = moment().toDate();
-    //this.setSamples(await this.props.dataSource.getAirQualityData(start, end));
-    this.setSamples(this.props.sensor.getReadings().filter((reading) => {
-      return reading.date <= end && reading.date >= start;
-    }));
-  }
-
-  @action setSamples(samples: SensorReading[]) {
-    this.loading = false;
-    this.samples = samples;
   }
 
   componentWillMount() {
     this.setMode('day');
   }
 
-  componentWillReceiveProps(nextProps: HistoryGraphProps) {
-    if (nextProps.sensor !== this.props.sensor) {
-      this.setMode(this.mode);
-    }
-  }
-
   render() {
+    const start = moment().subtract(1, this.mode).toDate();
+    const end = moment().toDate();
+    const samples = this.props.sensor.knownReadings.filter((reading, i) => reading.date <= end && reading.date >= start);
+
     let modeLink = (mode: GraphMode, label: string) =>
       <a href="#" className={this.mode === mode ? 'selected' : ''} onClick={() => this.setMode(mode)}>
         {label}
-      </a>
+      </a>;
 
     return <div className={['HistoryGraph', this.props.theme].join(' ')}>
       <div className="HistoryGraph__links">
+        {modeLink('hour', 'Hour')}
         {modeLink('day', 'Day')}
         {modeLink('week', 'Week')}
         {modeLink('month', 'Month')}
@@ -252,7 +262,7 @@ export default class HistoryGraph extends React.Component<HistoryGraphProps, {}>
       <div className="HistoryGraph__header">
         <div>Sat Nov 5, 2:40</div>
       </div>
-      <HistorySvgGraph data={this.samples} theme={this.props.theme} mode={this.mode} />
+      <HistorySvgGraph data={samples} theme={this.props.theme} mode={this.mode} />
     </div>;
   }
 }

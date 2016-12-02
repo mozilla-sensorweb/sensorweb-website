@@ -109,7 +109,9 @@ interface SidebarProps {
   isMobile: boolean
 }
 
-@observer
+//import { observable} from 'mobx';
+
+//@observer
 export default class Sidebar extends React.Component<SidebarProps, SidebarState> {
   el: HTMLElement;
   offset: number;
@@ -127,6 +129,7 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
       loading: true
     };
   }
+//  @observable foo = 1;
 
   componentDidMount() {
     this.draggable = new physics.Draggable(this.el, {
@@ -163,15 +166,18 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
 
   onResize = () => {
     setTimeout(() => {
+      console.log('setState in resize');
       const newMaxY = this.el.parentElement.getBoundingClientRect().height - this.minimizedHeight;
       this.setState((prevState) => ({
         y: prevState.y === 0 ? 0 : newMaxY,
         maxY: newMaxY
       } as SidebarState));
+      console.log('done set state');
     }, 0);
   }
 
   componentWillUnmount() {
+    console.log('UNMOUNTED');
     window.removeEventListener('resize', this.onResize);
     this.draggable.destroy();
   }
@@ -185,6 +191,7 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
 
     let sensor = this.props.selectedSensor;
     let theme: 'light' | 'dark' = 'light';
+    console.log('render sidebar', !!sensor);
 
     return <Motion style={{ y: y }}>{({ y }: any) =>
       <div ref={el => this.el = el}

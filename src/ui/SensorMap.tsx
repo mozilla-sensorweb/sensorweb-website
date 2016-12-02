@@ -157,7 +157,6 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
 
   componentDidUpdate() {
     this.map && google.maps.event.trigger(this.map, 'resize');
-    console.log('componentDidUpdate')
     this.renderMarkerLayer();
   }
 

@@ -8,6 +8,9 @@ export class Point {
   constructor(public x: number, public y: number) {
     this.time = now();
   }
+  distance(b: Point) {
+    return Math.sqrt(Math.pow(b.x - this.x, 2) + Math.pow(b.y - this.y, 2));
+  }
 }
 
 function eventToPoint(event: any): Point {
@@ -75,6 +78,11 @@ export class Draggable {
       case 'touchend':
       case 'touchcancel':
         this.delegate.end();
+        if (this.currentPoint.distance(this.startPoint!) < 5) {
+          console.log('click!');
+          event.target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          event.preventDefault();
+        }
         this.startPoint = undefined;
         break;
     }

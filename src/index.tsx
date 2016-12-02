@@ -19,7 +19,6 @@ import moment, { Moment } from 'moment';
 
 import STClient from './sensorthings';
 
-
 function AirPollutionIndex({ value }: { value: number }) {
 
   const COLORS = ['#77E15F', '#6CBC4B', '#0FA14A', '#F1EB45', '#F6BD4A',
@@ -76,7 +75,7 @@ class Root extends React.Component<{ appState: RootState }, ResizeState> {
         </div>
       </div>
       <div className="PageBody">
-        <SensorMap
+       <SensorMap
           currentGpsLocation={appState.currentGpsLocation}
           knownSensors={appState.knownSensors}
           selectedSensor={appState.selectedSensor}
@@ -96,9 +95,16 @@ class Root extends React.Component<{ appState: RootState }, ResizeState> {
 }
 
 
+
+
 let appState = new RootState();
 window.addEventListener('READY', async () => {
   const client = new STClient();
+  const sfSensor = Sensor.random();
+  sfSensor.location.latitude = 37.789418;
+  sfSensor.location.longitude = -122.389319;
+  sfSensor.setFakeReadings();
+  appState.learnAboutSensors([sfSensor]);
   appState.learnAboutSensors(await client.loadAll());
 });
 
@@ -108,6 +114,7 @@ window.addEventListener('READY', async () => {
 import { findLocation } from './location';
 
 findLocation().then((location) => {
+  console.log('Current location:', location);
   appState.setCurrentGpsLocation(location);
 });
 

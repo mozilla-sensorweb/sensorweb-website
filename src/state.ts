@@ -131,10 +131,8 @@ export class Sensor {
 
   static nextId = 0;
 
-  getReadings() {
-    if (this.knownReadings.length) {
-      return this.knownReadings;
-    }
+  @action
+  setFakeReadings() {
     let startValue = _.random(20, 40);
     let arr: SensorReading[] = [];
     let max = _.random(30, 70);
@@ -147,8 +145,8 @@ export class Sensor {
     }
     arr.reverse();
     this.knownReadings = arr;
-    return this.knownReadings;
   }
+
 
   @action
   static random() {
@@ -167,12 +165,16 @@ export class Sensor {
 }
 
 export class SensorReading {
-  @observable date: Date;
-  @observable pm: number;
-  @observable temperature?: number;
-  @observable humidity?: number;
+  date: Date;
+  pm: number;
+  temperature?: number;
+  humidity?: number;
 
   constructor(date: Date) {
     this.date = date;
+  }
+
+  toString() {
+    return `<SensorReading ${this.date.toISOString()} - pm: ${this.pm}, temp: ${this.temperature}>`;
   }
 }
