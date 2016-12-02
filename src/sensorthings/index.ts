@@ -12,7 +12,7 @@ export default class STClient {
 
   async loadAll() {
     const datastreamList = await this.request<ResponseList<IDatastream>>('GET', '/Datastreams');
-    datastreamList.value = datastreamList.value.filter(x => x['@iot.id'] === '50');
+    datastreamList.value = datastreamList.value.filter(x => x['@iot.id'] >= '50');
 
     const observationLinks = datastreamList.value.map(item => item['Observations@iot.navigationLink']);
     const observations = await Promise.all(observationLinks.slice(0, 5).map(link => this.request<ResponseList<IObservation>>('GET', link)));
