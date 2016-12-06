@@ -24,7 +24,6 @@ interface State {
 //     TWEEN.update(time);
 // }
 
-let animStartTime = 0;
 function animationFrame() {
   if (TWEEN.update()) {
     requestAnimationFrame(animationFrame);

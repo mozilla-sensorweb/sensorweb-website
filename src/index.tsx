@@ -11,45 +11,12 @@ useStrict(true);
 
 import { bem } from './utils';
 
-import DonutGraph from './ui/DonutGraph';
+
 import Sidebar from './ui/Sidebar';
 import SensorMap from './ui/SensorMap';
 import * as d3 from 'd3';
-import moment, { Moment } from 'moment';
 
 import STClient from './sensorthings';
-
-function AirPollutionIndex({ value }: { value: number }) {
-
-  const COLORS = ['#77E15F', '#6CBC4B', '#0FA14A', '#F1EB45', '#F6BD4A',
-                  '#FE9239', '#F25253', '#FD0031', '#CF0606', '#DC32FF'];
-
-  let scale = d3.scaleThreshold()
-    .domain([12, 24, 36, 42, 48, 54, 59, 65, 70])
-    .range([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  let activeIndex = scale(value);
-
-  let rects = COLORS.map((color, index) => (
-    <span key={index} className={['AirPollutionIndex__rect',
-      index === activeIndex ? 'AirPollutionIndex__rect--active' : null].join(' ')}
-      style={{backgroundColor: color}}>
-      {index === activeIndex ? value : null}
-    </span>
-  ));
-
-  return <div className="AirPollutionIndex">
-    <div className="AirPollutionIndex__bar">
-      {rects}
-    </div>
-    <div className="AirPollutionIndex__desc">
-      <span style={{color: COLORS[1], width: '30%'}}>1-35 Low</span>
-      <span style={{color: COLORS[4], width: '30%'}}>36-54 Moderate</span>
-      <span style={{color: COLORS[7], width: '30%'}}>55-70 High</span>
-      <span style={{color: COLORS[9], width: '10%'}}>&gt;70</span>
-    </div>
-
-  </div>;
-}
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
 import { RootState, Sensor, Location } from './state';
@@ -101,8 +68,7 @@ let appState = new RootState();
 window.addEventListener('READY', async () => {
   const client = new STClient();
   const sfSensor = Sensor.random();
-  sfSensor.location.latitude = 37.789418;
-  sfSensor.location.longitude = -122.389319;
+  sfSensor.location = new Location(37.789418, -122.389319);
   sfSensor.setFakeReadings();
   appState.learnAboutSensors([sfSensor]);
   appState.learnAboutSensors(await client.loadAll());

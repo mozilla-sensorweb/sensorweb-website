@@ -177,7 +177,6 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
   }
 
   componentWillUnmount() {
-    console.log('UNMOUNTED');
     window.removeEventListener('resize', this.onResize);
     this.draggable.destroy();
   }
