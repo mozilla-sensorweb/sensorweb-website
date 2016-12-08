@@ -154,7 +154,8 @@ html, body, #root, .root {
     width: 100%;
     border-radius: 3px;
     font-family: inherit;
-    border: 1px solid #999;
+    border: 1px solid #bbb;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
     -webkit-appearance: none; /* no inset shadow */
 
     &[disabled] {
@@ -343,7 +344,7 @@ html, body, #root, .root {
   border-radius: 4px;
   color: #333;
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-  width: 280px;
+  width: 250px;
   padding: 15px;
 
   font-weight: 200;

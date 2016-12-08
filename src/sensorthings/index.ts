@@ -15,13 +15,13 @@ export default class STClient {
     datastreamList.value = datastreamList.value.filter(x => x['@iot.id'] >= '50');
 
     const observationLinks = datastreamList.value.map(item => item['Observations@iot.navigationLink']);
-    const observations = await Promise.all(observationLinks.slice(0, 5).map(link => this.request<ResponseList<IObservation>>('GET', link)));
+    const observations = await Promise.all(observationLinks.map(link => this.request<ResponseList<IObservation>>('GET', link)));
 
     const thingLinks = datastreamList.value.map(item => item['Thing@iot.navigationLink']);
-    const things = await Promise.all(thingLinks.slice(0, 5).map(link => this.request<IThing>('GET', link)));
+    const things = await Promise.all(thingLinks.map(link => this.request<IThing>('GET', link)));
 
     const locationLinks = things.map(thing => thing['Locations@iot.navigationLink']);
-    const locations = await Promise.all(locationLinks.slice(0, 5).map(link => this.request<ResponseList<ILocation>>('GET', link)));
+    const locations = await Promise.all(locationLinks.map(link => this.request<ResponseList<ILocation>>('GET', link)));
 
     return things.map((thing, index) => {
       const loc = locations[index].value[0];

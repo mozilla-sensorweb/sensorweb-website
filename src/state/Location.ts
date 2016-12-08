@@ -1,5 +1,4 @@
 export default class Location {
-  private google?: google.maps.LatLng;
   readonly latitude: number;
   readonly longitude: number;
 
@@ -17,8 +16,10 @@ export default class Location {
     return `<Location ${this.latitude} ${this.longitude}>`;
   }
 
+  // Google Maps must be loaded for this to work.
+  // That's why we don't just use a raw google.maps.LatLng object.
+  private google?: google.maps.LatLng;
   toGoogle() {
-    // Maps must be loaded for this to work!
     if (!this.google) {
       this.google = new google.maps.LatLng(this.latitude, this.longitude);
     }

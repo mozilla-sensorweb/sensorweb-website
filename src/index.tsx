@@ -1,6 +1,6 @@
 // These imports inject dependencies like CSS and index.html
 import 'babel-polyfill';
-import './index.css';
+import './assets/index.css';
 import 'file?name=[name].[ext]!./index.html';
 
 import React from 'react';
