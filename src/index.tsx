@@ -6,24 +6,17 @@ import 'file?name=[name].[ext]!./index.html';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { observer } from 'mobx-react';
-import { action, useStrict, observable } from 'mobx';
-useStrict(true);
-
-import { bem } from './utils';
-
 
 import Sidebar from './ui/Sidebar';
 import SensorMap from './ui/SensorMap';
-import * as d3 from 'd3';
-
 import STClient from './sensorthings';
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
-import { RootState, Sensor, Location } from './state';
+import { AppState, Sensor, Location } from './state';
 
 @renderOnResize
 @observer
-class Root extends React.Component<{ appState: RootState }, ResizeState> {
+class Root extends React.Component<{ appState: AppState }, ResizeState> {
   constructor(props: any) {
     super(props);
     this.state = { width: 0, height: 0 };
@@ -46,14 +39,18 @@ class Root extends React.Component<{ appState: RootState }, ResizeState> {
           currentGpsLocation={appState.currentGpsLocation}
           knownSensors={appState.knownSensors}
           selectedSensor={appState.selectedSensor}
+          onSetLocation={this.onSetLocation}
           onClickSensor={this.onClickSensor} />
         <Sidebar
           currentLocation={appState.currentGpsLocation}
           isMobile={isMobile}
-          selectedSensor={appState.selectedSensor}
-           />
+          selectedSensor={appState.selectedSensor} />
       </div>
     </div>;
+  }
+
+  onSetLocation = (location: Location) => {
+    this.props.appState.setViewingLocation(location);
   }
 
   onClickSensor = (sensor: Sensor) => {
@@ -62,14 +59,13 @@ class Root extends React.Component<{ appState: RootState }, ResizeState> {
 }
 
 
-
-
-let appState = new RootState();
+let appState = new AppState();
 window.addEventListener('READY', async () => {
   const client = new STClient();
   const sfSensor = Sensor.random();
   sfSensor.location = new Location(37.789418, -122.389319);
-  sfSensor.setFakeReadings();
+  sfSensor.populateWithFakeReadings();
+  sfSensor.fleshOutFakeReadings();
   appState.learnAboutSensors([sfSensor]);
   appState.learnAboutSensors(await client.loadAll());
 });

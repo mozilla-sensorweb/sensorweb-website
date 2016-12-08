@@ -141,6 +141,30 @@ html, body, #root, .root {
   }
 }
 
+.SearchBox {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 30rem;
+  max-width: calc(100% - 2rem);
+  z-index: 10;
+  & input {
+    font-size: 1.5rem;
+    padding: .5rem;
+    width: 100%;
+    border-radius: 3px;
+    font-family: inherit;
+    border: 1px solid #999;
+    -webkit-appearance: none; /* no inset shadow */
+
+    &[disabled] {
+      color: #aaa;
+      opacity: 1;
+    }
+  }
+}
+
+
 .SmallTextList {
   font-size: smaller;
   color: #999;
@@ -526,3 +550,10 @@ svg {
     opacity: 1;
   }
 }
+
+
+
+/* Hide the placeholder text when an input is focused. */
+input:focus::-webkit-input-placeholder { color:transparent; }
+input:focus::-moz-placeholder { color:transparent; } /* FF 19+ */
+input:focus:-ms-input-placeholder { color:transparent; } /* IE 10+ */

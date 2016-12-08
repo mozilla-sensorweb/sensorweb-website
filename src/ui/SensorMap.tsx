@@ -118,26 +118,66 @@ class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {}> {
   }
 }
 
+interface SearchBoxProps {
+  onSearch(address: string): void;
+  searching?: boolean;
+}
+
+@observer
+class SearchBox extends React.Component<SearchBoxProps, {}> {
+  @observable currentValue = '';
+  input: HTMLInputElement;
+
+  @action onChange(newValue: string) {
+    this.currentValue = newValue;
+  }
+
+  @action onEnter() {
+    let value = this.currentValue;
+    this.currentValue = '';
+    this.input.blur();
+    this.props.onSearch(value);
+  }
+
+  render() {
+    return <div className="SearchBox">
+      <input
+        type="text"
+        ref={el => this.input = el}
+        value={this.props.searching ? 'Searching... ' : this.currentValue}
+        disabled={this.props.searching}
+        placeholder="Enter Address"
+        onKeyPress={(e) => e.key === 'Enter' && this.onEnter()}
+        onChange={(e) => this.onChange(e.currentTarget.value)} />
+    </div>;
+  }
+}
 
 
 interface SensorMapProps {
   knownSensors: ObservableMap<Sensor>;
   selectedSensor?: Sensor;
   currentGpsLocation?: Location;
-  onClickSensor: (sensor: Sensor) => void;
+  onClickSensor(sensor: Sensor): void;
+  onSetLocation(location: Location): void;
 }
 
 @renderOnResize
+@observer
 export default class SensorMap extends React.Component<SensorMapProps, {}> {
   el: HTMLElement;
   map?: google.maps.Map;
   markerLayerDiv: HTMLElement;
   markers: google.maps.OverlayView[] = [];
   projection: google.maps.MapCanvasProjection;
+  @observable searching: boolean;
 
   render() {
     return (
       <div ref={el => this.el = el} className="Map MainSection">
+        <SearchBox
+          searching={this.searching}
+          onSearch={this.onSearch} />
         <ColorIndexOverlay />
       </div>
     );
@@ -231,6 +271,31 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
     const center = new google.maps.LatLng(unwrappedCenter.lat(), unwrappedCenter.lng());
     return this.props.currentGpsLocation && this.map &&
       this.props.currentGpsLocation.equals(new Location(center.lat(), center.lng()));
+  }
+
+  onSearch = (address: string) => {
+    if (!this.map) {
+      return; // XXX: we need to wait for map to load and retry
+    }
+    this.searching = true;
+    let geo = new google.maps.Geocoder();
+    geo.geocode({ address }, (results, status) => {
+      this.searching = false;
+      // XXX if no address, handle error (maybe clear input?)
+      if (!results || !results[0]) {
+        console.log('unable to geocode: ' + status);
+        //this.addressInput.blur();
+        return;
+      }
+      let loc = results[0].geometry.location;
+      this.map!.panTo(loc);
+      this.props.onSetLocation(new Location(loc.lat(), loc.lng()));
+      // runInAction(() => {
+      //   this.selectLocation(results[0].geometry.location);
+      //   this.locationString = results[0].formatted_address;
+      //   this.typedAddress = '';
+      // });
+    });
   }
 
   onMapCenterChanged() {

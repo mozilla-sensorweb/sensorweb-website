@@ -40,6 +40,7 @@ export default class STClient {
         r.temperature = r.pm; // xxx
         sensor.addReading(r);
       });
+      sensor.fleshOutFakeReadings();
       return sensor;
     }).filter(s => !!s) as Sensor[];
   }

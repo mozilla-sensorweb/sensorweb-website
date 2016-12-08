@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as d3 from 'd3';
 import * as physics from '../physics';
+import moment from 'moment';
 
 import { Motion, spring } from 'react-motion';
 import { pmToColor, pmToIndex } from './colorScale';
@@ -26,6 +27,7 @@ const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
   }
 
   const value = sensor && sensor.currentPm || 0;
+  const readingTime = sensor && sensor.latestReading && moment(sensor.latestReading.date).fromNow();
   const color = pmToColor(value, theme);
 
   return (
@@ -37,7 +39,7 @@ const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
         </div>
         <ul className="SmallTextList">
           {displayDistance && <li>{displayDistance} from your location</li>}
-          <li>(?) views this week</li>
+          <li>{readingTime}</li>
         </ul>
         <div>
           <div className="SummaryBox__mainValue">
@@ -65,7 +67,7 @@ const CurrentDetails = observer(function ({ sensor, theme }: { theme: string, se
     displayTemp = Math.round(celsius * 1.8 + 32) + '°F';
   }
   if (sensor && sensor.currentHumidity !== undefined) {
-    displayHumidity = sensor.currentHumidity + '%';
+    displayHumidity = Math.round(sensor.currentHumidity) + '%';
   }
   return (
     <div className={['Section', !sensor ? 'Section--invisible' : ''].join(' ')}>

@@ -6,14 +6,10 @@ import Location from './Location';
 export { default as Location } from './Location';
 
 
-export class RootState {
+export class AppState {
   @observable currentGpsLocation?: Location;
   @observable selectedSensor?: Sensor;
   @observable knownSensors = new ObservableMap<Sensor>();
-
-  constructor() {
-
-  }
 
   @action setCurrentGpsLocation(location: Location) {
     this.currentGpsLocation = location;
@@ -25,20 +21,31 @@ export class RootState {
     console.log('selected sensor', sensor)
   }
 
-  @computed get nearestSensor(): Sensor | undefined {
-    if (!this.currentGpsLocation) {
-      return undefined;
+  @action setViewingLocation(location: Location) {
+    let closestSensor = this.closestSensorToLocation(location);
+    if (closestSensor) {
+      this.viewSensor(closestSensor);
     }
+  }
+
+  closestSensorToLocation(location: Location) {
     let minDistance = Infinity;
     let minSensor: Sensor | undefined;
     this.knownSensors.values().forEach((sensor) => {
-      const dist = sensor.location.distanceTo(this.currentGpsLocation!);
+      const dist = sensor.location.distanceTo(location);
       if (dist < minDistance) {
         minSensor = sensor;
         minDistance = dist;
       }
     });
     return minSensor;
+  }
+
+  @computed get nearestSensor(): Sensor | undefined {
+    if (!this.currentGpsLocation) {
+      return undefined;
+    }
+    return this.closestSensorToLocation(this.currentGpsLocation);
   }
 
   @action initializeWithRandomData() {
@@ -84,8 +91,14 @@ export class Sensor {
 
   static nextId = 0;
 
-  @action
-  setFakeReadings() {
+  @action fleshOutFakeReadings() {
+    this.knownReadings.forEach((reading) => {
+      reading.humidity = Math.random() * 100;
+      reading.temperature = Math.random() * 30;
+    });
+  }
+
+  @action populateWithFakeReadings() {
     let startValue = _.random(20, 40);
     let arr: SensorReading[] = [];
     let max = _.random(30, 70);
