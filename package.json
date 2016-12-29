@@ -6,15 +6,39 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "node_modules/.bin/webpack --progress --colors --watch",
-    "build": "node_modules/.bin/webpack"
+    "prod": "NODE_ENV=production node_modules/.bin/webpack",
+    "dev": "node_modules/.bin/webpack-dev-server -d --open"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MPL",
   "babel": {
-    "plugins": ["transform-async-to-generator"],
-    "presets": ["es2015", "react", "stage-0"]
+    "plugins": [
+      "transform-async-to-generator"
+    ],
+    "presets": [
+      [
+        "es2015",
+        {
+          "modules": false
+        }
+      ],
+      "react",
+      "stage-0"
+    ]
   },
   "dependencies": {
+    "d3": "^4.3.0",
+    "lodash": "^4.17.2",
+    "mobx-react": "^3.5.6",
+    "mobx": "^2.6.0",
+    "moment": "^2.15.2",
+    "react-addons-css-transition-group": "^15.3.2",
+    "react-dom": "^15.3.1",
+    "react-motion": "^0.4.5",
+    "react": "^15.3.2",
+    "tween.js": "^16.3.5"
+  },
+  "devDependencies": {
     "@types/d3": "^4.2.38",
     "@types/googlemaps": "^3.25.35",
     "@types/lodash": "^4.14.40",
@@ -23,6 +47,7 @@
     "@types/react-dom": "^0.14.17",
     "@types/react-motion": "0.0.20",
     "@types/tween.js": "0.0.31",
+    "babel-core": "^6.21.0",
     "babel-loader": "^6.2.5",
     "babel-plugin-transform-async-to-generator": "^6.8.0",
     "babel-polyfill": "^6.13.0",
@@ -31,29 +56,20 @@
     "babel-preset-stage-0": "^6.5.0",
     "clean-webpack-plugin": "^0.1.10",
     "css-loader": "^0.25.0",
-    "d3": "^4.3.0",
-    "extract-text-webpack-plugin": "^1.0.1",
+    "extract-text-webpack-plugin": "^2.0.0-beta.4",
     "file-loader": "^0.9.0",
-    "lodash": "^4.17.2",
-    "mobx": "^2.6.0",
-    "mobx-react": "^3.5.6",
-    "moment": "^2.15.2",
+    "postcss": "^5.2.8",
     "postcss-cssnext": "^2.8.0",
-    "postcss-import": "^8.1.2",
-    "postcss-loader": "^0.13.0",
+    "postcss-import": "^9.0.0",
+    "postcss-loader": "^1.2.1",
     "postcss-url": "^5.1.2",
-    "react": "^15.3.2",
-    "react-addons-css-transition-group": "^15.3.2",
-    "react-dom": "^15.3.1",
-    "react-motion": "^0.4.5",
     "source-map-loader": "^0.1.5",
     "style-loader": "^0.13.1",
     "ts-loader": "^0.8.2",
-    "ts-node": "^1.6.1",
     "tslint": "^3.15.1",
-    "tween.js": "^16.3.5",
-    "typescript": "^2.1.0-dev.20160922",
+    "typescript": "^2.1.4",
     "url-loader": "^0.5.7",
-    "webpack": "^1.13.2"
+    "webpack": "^2.2.0-rc.3",
+    "webpack-dev-server": "^1.16.2"
   }
 }

@@ -169,7 +169,7 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
   onResize = () => {
     setTimeout(() => {
       console.log('setState in resize');
-      const newMaxY = this.el.parentElement.getBoundingClientRect().height - this.minimizedHeight;
+      const newMaxY = this.el.parentElement!.getBoundingClientRect().height - this.minimizedHeight;
       this.setState((prevState) => ({
         y: prevState.y === 0 ? 0 : newMaxY,
         maxY: newMaxY

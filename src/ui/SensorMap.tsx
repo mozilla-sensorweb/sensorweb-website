@@ -239,7 +239,7 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
       overlay.getPanes().overlayMouseTarget.appendChild(this.markerLayerDiv);
     };
     overlay.onRemove = () => {
-      this.markerLayerDiv.parentElement.removeChild(this.markerLayerDiv);
+      this.markerLayerDiv.parentElement!.removeChild(this.markerLayerDiv);
     };
     overlay.draw = () => {
       this.projection = overlay.getProjection();
