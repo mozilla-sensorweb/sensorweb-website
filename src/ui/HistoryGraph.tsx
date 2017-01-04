@@ -9,6 +9,8 @@ import { observer } from 'mobx-react';
 import { Sensor, SensorReading } from '../state';
 import { pmToColor, pmToGradientColor } from './colorScale';
 
+const styled = require<any>('styled-components').default;
+
 interface HistorySvgGraphProps {
   data: SensorReading[];
   theme: 'light' | 'dark';
@@ -17,6 +19,39 @@ interface HistorySvgGraphProps {
 
 type GraphMode = 'hour' | 'day' | 'week' | 'month';
 
+const StyledSvg = styled.svg`
+  flex-grow: 1;
+  min-height: 100px;
+`;
+
+const BottomAxis = styled.g`
+  font-size: 12px;
+
+  & text {
+    font-family: Rubik, Arial;
+    text-transform: uppercase;
+    fill: black;
+  }
+`;
+
+const PointerText = styled.text`
+  fill: white;
+  font-size: 20px;
+  text-anchor: middle;
+  font-family: Rubik, Arial;
+`;
+
+const AverageLine = styled.path`
+  fill: none;
+  stroke: black;
+  stroke-width: 3px;
+  opacity: 0.1;
+`;
+const Line = styled.path`
+  fill: none;
+  stroke: #333;
+  stroke-width: 3px;
+`;
 
 @renderOnResize
 class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState> {
@@ -24,13 +59,13 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
   xAxis: SVGElement;
   //yAxis: SVGElement;
   path: SVGElement;
-  area: SVGElement;
   gradient: SVGElement;
   averageLine: SVGElement;
   zoom: d3.ZoomBehavior<Element, {}>;
   zoomElement: SVGElement;
   //clipRect: SVGElement;
   pointerEl: SVGElement;
+  pointerText: SVGElement;
   xExtent: Date[];
   yExtent: number[];
 
@@ -56,7 +91,7 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
       stops.push(<stop key={i} offset={(progress * 100 | 0)+ '%'} stopColor={pmToGradientColor(step)} stopOpacity={opacity} />);
     }
     return (
-      <svg className={['HistorySvgGraph', this.props.theme].join(' ')}
+      <StyledSvg
         onMouseMove={this.onMouseMove as any}
         onTouchMove={this.onMouseMove as any}>
         <defs>
@@ -70,10 +105,9 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
         <rect style={{pointerEvents: 'all', fill: 'none'}} x={0} y={0} width="100%" height="100%" />
         <g transform={`translate(${this.margin.left}, ${this.margin.top})`}>
           <rect style={{pointerEvents: 'all', fill: 'none'}} ref={el => this.zoomElement = el} />
-          <line ref={ el => this.averageLine = el} className="averageLine" />
-          <path ref={el => this.area = el} className="area" />
-          <path ref={el => this.path = el} className="line" />
-          <g ref={el => this.xAxis = el} className="axis axis--x" />
+          <AverageLine innerRef={(el: any) => this.averageLine = el}  />
+          <Line innerRef={(el: any) => this.path = el} />
+          <BottomAxis innerRef={(el: any) => this.xAxis = el} />
           {/*<g ref={el => this.yAxis = el} className="axis axis--y" />*/}
         </g>
         <g ref={el => this.pointerEl = el }>
@@ -81,9 +115,10 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
             <path d="M251.75,162.5C284.451,162.5 311,189.049 311,221.75C311,254.451 250.75,311 250.75,311C250.75,311 192.5,254.451 192.5,221.75C192.5,189.049 219.049,162.5 251.75,162.5Z"
               />
           </g>
-          <text className="pointerText" x="20" y="27">30</text>
+          <PointerText innerRef={(el: any) => this.pointerText = el}
+            x="20" y="27">30</PointerText>
         </g>
-      </svg>
+      </StyledSvg>
     );
   }
   componentDidMount() {
@@ -124,7 +159,7 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
       }
       const pm = this.props.data[scale(x)].pm;
       this.pointerEl.setAttribute('fill', pmToColor(pm, 'light'));
-      this.pointerEl.querySelector('.pointerText')!.textContent = pm.toFixed(0) + '';
+      this.pointerText.textContent = pm.toFixed(0) + '';
     }
   }
 
@@ -198,12 +233,6 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
         .x(d => transform.rescaleX(xScale as any)(d.date))
         .y(d => yScale(d.pm))
 
-    const area = d3.area<SensorReading>()
-      .curve(d3.curveBasis)
-      .x(d => transform.rescaleX(xScale as any)(d.date))
-      .y1(d => yScale(d.pm))
-      .y0(height);
-
     // this.path.attr("transform", d3.event.transform);
     // t.call(xAxis.scale(d3.event.transform.rescaleX(x)));
     // gY.call(xScalAxis.scale(d3.event.transform.rescaleY(y)));
@@ -211,11 +240,6 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
     this.xAxis.setAttribute('transform', `translate(0, ${height})`);
     d3.select(this.path)
       .attr('d', path(pickFromArray(this.props.data, width / 4)) || '')
-      .attr('clip-path', 'url(#clip)');
-    d3.select(this.area)
-      .attr('d', area(pickFromArray(this.props.data, width / 4)) || '')
-      .style('fill', 'url(#gradient)')
-      .style('opacity', 0.4)
       .attr('clip-path', 'url(#clip)');
       //.attr('transform', 'scale(' + transform.k + ', 1)')
 
@@ -248,21 +272,49 @@ export default class HistoryGraph extends React.Component<HistoryGraphProps, {}>
     const samples = this.props.sensor.knownReadings.filter((reading, i) => reading.date <= end && reading.date >= start);
 
     let modeLink = (mode: GraphMode, label: string) =>
-      <a href="#" className={this.mode === mode ? 'selected' : ''} onClick={() => this.setMode(mode)}>
+      <Link href="#"
+         selected={this.mode === mode}
+         onClick={() => this.setMode(mode)}>
         {label}
-      </a>;
+      </Link>;
 
-    return <div className={['HistoryGraph', this.props.theme].join(' ')}>
-      <div className="HistoryGraph__links">
+    return <HistoryGraphStyled>
+      <Links>
         {modeLink('hour', 'Hour')}
         {modeLink('day', 'Day')}
         {modeLink('week', 'Week')}
         {modeLink('month', 'Month')}
-      </div>
-      <div className="HistoryGraph__header">
+      </Links>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
         <div>Sat Nov 5, 2:40</div>
       </div>
       <HistorySvgGraph data={samples} theme={this.props.theme} mode={this.mode} />
-    </div>;
+    </HistoryGraphStyled>;
   }
 }
+
+const HistoryGraphStyled = styled.div`
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 1rem;
+`;
+
+const Links = styled.div`
+  text-align: right;
+`;
+
+const Link = styled.a`
+  display: inline-block;
+  padding: 0.5rem 0.8rem;
+  color: ${(props: any) => props.selected ? '#fff' : '#666'};
+  background-color: ${(props: any) => props.selected ? '#666' : 'transparent'};
+  border-radius: 3px;
+  text-decoration: none;
+`;
+

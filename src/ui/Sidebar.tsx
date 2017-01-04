@@ -9,6 +9,8 @@ import { Sensor, Location } from '../state';
 import { observer } from 'mobx-react';
 import HistoryGraph from './HistoryGraph';
 
+const { default: styled, css } = require<any>('styled-components');
+
 // http://taqm.epa.gov.tw/taqm/tw/fpmi.htm
 
 function pmToQualityString(pm: number) {
@@ -16,6 +18,50 @@ function pmToQualityString(pm: number) {
   return strs[pmToIndex(pm)];
 }
 
+
+const SummaryBoxDiv = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  & .header {
+    border-bottom: 1px solid #999;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  & .mainValue {
+    display: flex;
+    align-self: center;
+    align-items: flex-end;
+    justify-content: center;
+
+    & .value {
+      font-size: 6rem;
+      font-weight: 200;
+      line-height: 1;
+    }
+    & .label {
+      font-weight: 200;
+      padding: 0 0 1rem 0.5rem;
+    }
+
+  }
+`;
+
+const LeftRightSmallTextList = styled.ul`
+  font-size: smaller;
+  color: #999;
+  list-style: none;
+  padding-left: 0;
+  overflow: hidden;
+
+  & li:first-child {
+    float: left;
+  }
+  & li:last-child {
+    float: right;
+  }
+`
 
 const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
   { sensor?: Sensor, currentLocation: Location | undefined, theme: 'light'|'dark' }) {
@@ -31,33 +77,57 @@ const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
   const color = pmToColor(value, theme);
 
   return (
-    <div className={['Section', !sensor ? 'Section--invisible' : ''].join(' ')}>
-      <div className="SummaryBox">
-        <div className="SummaryBox__header">
-          <div className="SummaryBox__airText"
+    <Section hidden={!sensor}>
+      <SummaryBoxDiv>
+        <div className="header">
+          <div className="airText"
             style={{ color }}>Air Quality is {pmToQualityString(value)}!</div>
         </div>
-        <ul className="SmallTextList">
+        <LeftRightSmallTextList>
           {displayDistance && <li>{displayDistance} from your location</li>}
           <li>{readingTime}</li>
-        </ul>
+        </LeftRightSmallTextList>
         <div>
-          <div className="SummaryBox__mainValue">
+          <div className="mainValue">
             <div className="value" style={{ color }}>{value}</div>
             <div className="label">µg/m³<br />PM2.5</div>
           </div>
         </div>
-      </div>
-    </div>
+      </SummaryBoxDiv>
+    </Section>
   );
 });
 
-let CurrentDetailsItem = ({value, label}: any) => (
-  <div className="CurrentDetailsItem">
-    <div className="CurrentDetailsItem__value">{value}</div>
-    <div className="CurrentDetailsItem__label">{label}</div>
+
+const Section = styled.div`
+  opacity: ${(props: any) => props.hidden ? 0 : 1};
+  margin: 1rem;
+  padding: 0.5rem;
+  background: rgba(42, 49, 57, 0.9);
+  border-radius: 4px;
+  transition: opacity 300ms ease;
+`;
+
+let CurrentDetailsItem = styled(({value, label, className}: any) => (
+  <div className={className}>
+    <div className="value">{value}</div>
+    <div className="label">{label}</div>
   </div>
-)
+))`
+  & .value {
+    font-weight: 200;
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+  & .label {
+    font-size: 0.7rem;
+  }
+`;
+
+const CurrentDetailsDiv = styled.div`
+  display: flex;
+  justify-content: space-around;
+`;
 
 const CurrentDetails = observer(function ({ sensor, theme }: { theme: string, sensor?: Sensor }) {
   let displayTemp = '--°';
@@ -70,13 +140,13 @@ const CurrentDetails = observer(function ({ sensor, theme }: { theme: string, se
     displayHumidity = Math.round(sensor.currentHumidity) + '%';
   }
   return (
-    <div className={['Section', !sensor ? 'Section--invisible' : ''].join(' ')}>
-      <div className="CurrentDetails">
+    <Section hidden={!sensor}>
+      <CurrentDetailsDiv>
         <CurrentDetailsItem value={displayTemp} label="Temperature" />
         <CurrentDetailsItem value={displayHumidity} label="Humidity" />
         <CurrentDetailsItem value="Cloudy" label="Conditions" />
-      </div>
-    </div>
+      </CurrentDetailsDiv>
+    </Section>
   );
 });
 
@@ -91,18 +161,46 @@ interface SidebarState {
   loading: boolean;
 }
 
+const CompactFooterDiv = styled.div`
+  display: flex;
+  color: white;
+  background: green;
+  justify-content: space-around;
+  align-items: center;
+  height: 80px;
+  width: 100%;
+  position: absolute;
+
+  & .value {
+    font-weight: 200;
+    font-size: 4rem;
+    line-height: 1;
+    padding-left: 0.5rem;
+  }
+  & .label {
+    padding: 0.5rem;
+    font-weight: 200;
+    align-self: flex-end;
+  }
+  & .text {
+    padding-left: 1rem;
+    padding-right: 0.5rem;
+    flex: 1;
+  }
+`;
+
 function CompactFooter({ opacity, sensor }: { opacity: number, sensor?: Sensor }) {
   const pm = sensor && sensor.currentPm || 0;
-  return <div className="CompactFooter" style={{
+  return <CompactFooterDiv style={{
     zIndex: 1,
     opacity: opacity,
     visibility: opacity === 0 ? 'hidden' : 'visible',
     backgroundColor: pmToColor(pm || 0, 'dark')
   }}>
-    <div className="CompactFooter__value">{pm}</div>
-    <div className="CompactFooter__label">µg/m³<br />PM2.5</div>
-    <div className="CompactFooter__text">Air Quality is {pmToQualityString(pm)}!</div>
-  </div>;
+    <div className="value">{pm}</div>
+    <div className="label">µg/m³<br />PM2.5</div>
+    <div className="text">Air Quality is {pmToQualityString(pm)}!</div>
+  </CompactFooterDiv>;
 }
 
 interface SidebarProps {
@@ -195,11 +293,11 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
     console.log('render sidebar', !!sensor);
 
     return <Motion style={{ y: y }}>{({ y }: any) =>
-      <div ref={el => this.el = el}
+      <SidebarDiv
+        innerRef={(el: any) => this.el = el}
         style={{ transform:
           !this.props.isMobile ? 'none' :
-          this.state.loading ? `translateY(calc(100% - 80px))` : `translate3d(0, ${y}px, 0)` }}
-        className={['Sidebar', 'MainSection', this.state.dragging && 'dragging', 'Sidebar--' + theme].join(' ')}>
+          this.state.loading ? `translateY(calc(100% - 80px))` : `translate3d(0, ${y}px, 0)` }}>
         <CompactFooter
           opacity={percentage}
           sensor={sensor} />
@@ -210,20 +308,39 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
             currentLocation={this.props.currentLocation}
             sensor={sensor} />
           <CurrentDetails theme={theme} sensor={sensor} />
-          <div className="Sidebar__waves">
+          <div className="waves">
             <img src={theme === 'dark'
                       ? require<string>('../assets/sidebar-waves-dark.png')
                       : require<string>('../assets/sidebar-waves-light.png')} />
           </div>
         </div>
-        <div className="Sidebar__bottomArea">
+        <div className="bottomArea">
           { sensor && <HistoryGraph sensor={sensor} theme={theme} /> }
-
         </div>
-        {/*<AirPollutionIndex value={34} />*/}
-
-        {/*<ParticulateWidget dataSource={dataSource} />*/}
-      </div>
+      </SidebarDiv>
     }</Motion>;
   }
 }
+
+const SidebarDiv = styled.div`
+  margin: 0.5rem;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.3);
+  flex: 0 0 350px;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  overflow-y: auto;
+
+  & .waves img {
+    width: 100%;
+    height: 50px; /* xxx */
+    margin-bottom: -20px;
+    display: block;
+  }
+
+  & .bottomArea {
+    display: 'flex';
+    flex-direction: 'column';
+    flex: 1;
+  }
+`;

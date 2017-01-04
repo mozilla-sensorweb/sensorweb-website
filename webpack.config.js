@@ -1,7 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 var CleanWebpackPlugin = require('clean-webpack-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const BUILD_DIR = path.resolve(__dirname, './dist');
 let isProd = (process.env.NODE_ENV === 'production');
@@ -37,7 +36,6 @@ module.exports = {
       name: 'vendor'
     }),
     new CleanWebpackPlugin([BUILD_DIR]),
-    new ExtractTextPlugin('sensorweb-www.css'),
     new webpack.LoaderOptionsPlugin({
       minimize: true,
       debug: true
@@ -56,16 +54,7 @@ module.exports = {
     rules: [{
       oneOf: [
         { test: /\.tsx?$/, use: ['babel-loader', 'ts-loader'] },
-        { test: /\.css$/,
-          loader: ExtractTextPlugin.extract({
-            fallbackLoader: 'style-loader',
-            loader: [
-              { loader: 'css-loader', query: { sourceMap: true, importLoaders: 1 } },
-              { loader: 'postcss-loader' }
-            ]
-          })
-        },
-        { test: /(.*)/, use: 'file-loader?name=[name].[ext]',
+        { test: /(.*)/, use: 'file-loader?name=[name].[hash].[ext]',
           include: [
             path.resolve(__dirname, 'src')
           ]

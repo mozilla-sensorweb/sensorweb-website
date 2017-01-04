@@ -1,30 +1,86 @@
 import * as React from 'react';
 import { getColorArray } from './colorScale';
+const styled = require<any>('styled-components').default;
 
 interface ColorIndexOverlayProps {
   //theme: 'light' | 'dark';
 }
+
+const OverlayWrapper = styled.div`
+  position: absolute;
+  z-index: 2;
+  bottom: 30px;
+  left: 10px;
+  background: white;
+  border-radius: 4px;
+  color: #333;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  width: 250px;
+  padding: 15px;
+`;
+
+const Bars = styled.div`
+  display: flex;
+  margin-top: 0.5rem;
+`;
+
+const ColorBar = styled.div`
+  height: 16px;
+  width: calc(10% - 1px);
+  margin: 0.5px;
+  box-sizing: border-box;
+  &:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+  &:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+`;
+
+const Labels = styled.div`
+  display: flex;
+  margin-top: 0.5rem;
+  position: relative;
+  left: 2px;
+`;
+
+const Label = styled.div`
+  text-align: center;
+  font-weight: 400;
+  font-size: 0.8rem;
+  box-sizing: border-box;
+  border-right: 2px dotted #999;
+  width: calc(30%);
+  line-height: 1;
+  &:last-child {
+    border-right-color: transparent;
+  }
+  &:nth-child(2) {
+    width: calc(40%);
+  }
+`;
+
+
 export default class ColorIndexOverlay extends React.Component<{}, {}> {
   render() {
     const colors = getColorArray('light');
     const colorBars = colors.map((c, index) => {
-      return <div key={index} className="ColorIndexOverlay__color" style={{backgroundColor: c}}></div>
+      return <ColorBar key={index} style={{backgroundColor: c}} />
     });
     return (
-      <div className="ColorIndexOverlay">
+      <OverlayWrapper>
         {/*<div>PM 2.5 Index</div>*/}
-        <div className="ColorIndexOverlay__bar">
+        <Bars>
           {colorBars}
-        </div>
-        <div className="ColorIndexOverlay__labels">
-          <div className="ColorIndexOverlay__low"
-            style={{ color: colors[2] }}>Low</div>
-          <div className="ColorIndexOverlay__moderate"
-            style={{ color: colors[5] }}>Moderate</div>
-          <div className="ColorIndexOverlay__high"
-            style={{ color: colors[8] }}>High</div>
-        </div>
-      </div>
+        </Bars>
+        <Labels>
+          <Label style={{ color: colors[2] }}>Low</Label>
+          <Label style={{ width: 'calc(40%)', color: colors[5] }}>Moderate</Label>
+          <Label style={{ borderRightColor: 'transparent', color: colors[8] }}>High</Label>
+        </Labels>
+      </OverlayWrapper>
     )
   }
 }
+
+

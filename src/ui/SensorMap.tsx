@@ -15,6 +15,33 @@ import NumberTween from './NumberTween';
 
 const MAPS_API_KEY = 'AIzaSyA_QULMpHLgnha_jMe-Ie-DancN1Bz4uEE';
 
+const { default: styled, css, injectGlobal } = require<any>('styled-components');
+
+injectGlobal`
+  .gps-control {
+    background-color: #fff;
+    box-shadow: 0px 1px 4px -1px rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 10px;
+    margin-right: 10px;
+    & img {
+      width: 28px;
+      height: 25px;
+      padding: 7px 8px 2px 6px;
+      opacity: 0.55;
+    }
+  }
+
+  .gps-control.following {
+    background-color: #cef;
+    & img {
+      opacity: 1;
+    }
+  }
+`
+
 class GoogleMapsLoader {
   @observable loaded = false;
   readonly scriptSrc: string;
@@ -69,6 +96,58 @@ interface SensorMarkerProps {
   selected: boolean;
 }
 
+const MarkerShadow = styled.div`
+  opacity: ${(props: any) => props.selected ? 1 : 0};
+  transition: opacity 300ms ease-out, transform 300ms cubic-bezier(0.355, 1.395, 0.605, 0.975);
+  transform: scale(${(props: any) => props.selected ? 1 : 0.5});
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+`;
+
+const MarkerNumberWrapper = styled.span`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
+  transition: background-color 2s ease;
+  width: 100%;
+  height: 100%;
+  background-color: ${(props: any) => props.backgroundColor};
+
+  &::before {
+    border: 5px solid white;
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
+  }
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+`;
+
+const SensorMarkerStyledDiv = styled.div`
+  zIndex: ${(props: any) => props.selected ? 1 : 0};
+  position: absolute;
+  width: 4rem;
+  height: 4rem;
+  margin-left: -2rem;
+  margin-top: -2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+`;
+
 @observer
 class SensorMarker extends React.Component<SensorMarkerProps, {}> {
   constructor(props: SensorMarkerProps) {
@@ -81,15 +160,16 @@ class SensorMarker extends React.Component<SensorMarkerProps, {}> {
     let shadowColor = d3.hsl(bgColor);
     shadowColor.opacity = 0.6;
 
-    return <div className={['SensorMarker', this.props.selected ? 'SensorMarker--selected' : null].join(' ')}
-      style={{
-        left: this.props.point.x,
-        top: this.props.point.y,
-      }}
-      onClick={(e) => this.props.onClick(this.props.sensor)}>
-      <div className="shadow" style={{boxShadow: `0 0 0 10px ${shadowColor}`}} />
-      <span style={{ backgroundColor: bgColor }}><NumberTween value={pm} /></span>
-    </div>;
+    return <SensorMarkerStyledDiv
+      style={{ left: this.props.point.x, top: this.props.point.y }}
+      onClick={(e: any) => this.props.onClick(this.props.sensor)}>
+      <MarkerShadow
+        selected={this.props.selected}
+        style={{boxShadow: `0 0 0 10px ${shadowColor}`}} />
+      <MarkerNumberWrapper
+        backgroundColor={bgColor}><NumberTween value={pm} />
+      </MarkerNumberWrapper>
+    </SensorMarkerStyledDiv>;
   }
 }
 
@@ -112,7 +192,7 @@ class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {}> {
             sensor={sensor}
             selected={sensor === this.props.selectedSensor}
             onClick={this.props.onClickSensor}
-            />
+            />;
         })}
     </div>;
   }
@@ -122,6 +202,31 @@ interface SearchBoxProps {
   onSearch(address: string): void;
   searching?: boolean;
 }
+
+
+const StyledSearchBox = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 30rem;
+  max-width: calc(100% - 2rem);
+  z-index: 10;
+  & input {
+    font-size: 1.5rem;
+    padding: .5rem;
+    width: 100%;
+    border-radius: 3px;
+    font-family: inherit;
+    border: 1px solid #bbb;
+    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+    -webkit-appearance: none; /* no inset shadow */
+
+    &[disabled] {
+      color: #aaa;
+      opacity: 1;
+    }
+  }
+`;
 
 @observer
 class SearchBox extends React.Component<SearchBoxProps, {}> {
@@ -140,7 +245,7 @@ class SearchBox extends React.Component<SearchBoxProps, {}> {
   }
 
   render() {
-    return <div className="SearchBox">
+    return <StyledSearchBox>
       <input
         type="text"
         ref={el => this.input = el}
@@ -149,7 +254,7 @@ class SearchBox extends React.Component<SearchBoxProps, {}> {
         placeholder="Enter Address"
         onKeyPress={(e) => e.key === 'Enter' && this.onEnter()}
         onChange={(e) => this.onChange(e.currentTarget.value)} />
-    </div>;
+    </StyledSearchBox>;
   }
 }
 
@@ -161,6 +266,14 @@ interface SensorMapProps {
   onClickSensor(sensor: Sensor): void;
   onSetLocation(location: Location): void;
 }
+
+const StyledMap = styled.div`
+  margin: 0.5rem;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.3);
+  position: relative;
+  background: #F5F6F7;
+  flex-grow: 1;
+`;
 
 @renderOnResize
 @observer
@@ -174,12 +287,12 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
 
   render() {
     return (
-      <div ref={el => this.el = el} className="Map MainSection">
+      <StyledMap innerRef={(el: any) => this.el = el}>
         <SearchBox
           searching={this.searching}
           onSearch={this.onSearch} />
         <ColorIndexOverlay />
-      </div>
+      </StyledMap>
     );
   }
 
