@@ -11,15 +11,21 @@ import Sidebar from './ui/Sidebar';
 import SensorMap from './ui/SensorMap';
 import STClient from './sensorthings';
 import PageHeader from './ui/PageHeader';
+import SensorDetailsPanel from './ui/SensorDetailsPanel';
+import MobileHeader from './ui/MobileHeader';
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
 import { AppState, Sensor, Location } from './state';
 
-const { default: styled } = require<any>('styled-components');
+const { default: styled, ThemeProvider } = require<any>('styled-components');
+
+import { observable } from 'mobx';
 
 @renderOnResize
 @observer
 class Root extends React.Component<{ appState: AppState }, ResizeState> {
+  @observable expanded = true;
+
   constructor(props: any) {
     super(props);
     this.state = { width: 0, height: 0 };
@@ -28,42 +34,171 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
   render() {
     const appState = this.props.appState;
     const isMobile = (this.state.width < 500);
-    return <RootDiv>
-      <PageHeader />
-      <div style={{
-        display: 'flex',
-        flex: 1,
-        minHeight: 0
-      }}>
-       <SensorMap
-          currentGpsLocation={appState.currentGpsLocation}
-          knownSensors={appState.knownSensors}
-          selectedSensor={appState.selectedSensor}
-          onSetLocation={this.onSetLocation}
-          onClickSensor={this.onClickSensor} />
-        <Sidebar
-          currentLocation={appState.currentGpsLocation}
-          isMobile={isMobile}
-          selectedSensor={appState.selectedSensor} />
-      </div>
-    </RootDiv>;
-  }
-
-  onSetLocation = (location: Location) => {
-    this.props.appState.setViewingLocation(location);
+    const theme = {
+      isMobile,
+    };
+    return (
+      <ThemeProvider theme={theme}>
+        <RootDiv>
+          {!isMobile && <PageHeader />}
+          <MobileHeader
+            searching={appState.isSearchingForLocation}
+            onSearch={appState.searchForLocation.bind(appState)} />
+          <SensorAndMapList>
+            <SensorMap
+              style={{width: '100%', flexGrow: 1}}
+              currentGpsLocation={appState.currentGpsLocation}
+              knownSensors={appState.knownSensors}
+              selectedSensor={appState.selectedSensor}
+              onMapLoaded={appState.onMapLoaded.bind(appState)}
+              onClickSensor={this.onClickSensor} />
+            {appState.selectedSensor &&
+              <SensorListItem
+                onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
+                onClickDetails={this.onClickDetails}
+                expanded={this.expanded}
+                sensor={appState.selectedSensor} />}
+          </SensorAndMapList>
+          {appState.viewingSensorDetails &&
+            <SensorDetailsPanel
+              onClose={() => appState.stopViewingSensorDetails()}
+              currentLocation={appState.currentGpsLocation}
+              sensor={appState.selectedSensor!} />}
+        </RootDiv>
+      </ThemeProvider>
+    );
   }
 
   onClickSensor = (sensor: Sensor) => {
     this.props.appState.viewSensor(sensor);
   };
+
+  onClickDetails = () => {
+    const sensor = this.props.appState.selectedSensor!;
+    this.props.appState.viewSensorDetails(sensor);
+  };
 }
+
+import { pmToColor } from './ui/colorScale';
+interface SensorListItemProps {
+  sensor: Sensor;
+  className: string;
+  onClickExpand: any;
+  onClickDetails: any;
+  expanded: boolean;
+}
+const SensorListItem = styled(class extends React.Component<SensorListItemProps, any> {
+  render() {
+    const sensor = this.props.sensor;
+    const color = pmToColor(sensor.currentPm, 'light');
+    const temp = sensor.currentTemperature;
+    const humidity = sensor.currentHumidity;
+
+    let faceIcon;
+    let qualityText;
+    if (sensor.currentPm < 36) {
+      faceIcon = require<string>('./assets/face-great.svg');
+      qualityText = 'Great Air Quality';
+    } else if (sensor.currentPm < 59) {
+      faceIcon = require<string>('./assets/face-moderate.svg');
+      qualityText = 'Moderate Quality';
+    } else {
+      faceIcon = require<string>('./assets/face-bad.svg');
+      qualityText = 'Bad Air Quality';
+    }
+
+    return <div className={this.props.className} onClick={this.props.onClickExpand}>
+      <div className="row">
+        <img className="icon"
+          src={faceIcon}
+          style={{ backgroundColor: color, borderRadius: '5px' }} />
+        <div>
+          <div className="sensorName">A Sensor</div>
+          <div className="qualityText" style={{color: color}}>{qualityText}</div>
+        </div>
+        <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
+          <img
+            src={require<string>('./assets/sun-icon.svg')}
+            style={{width: '3rem', height: '3rem'}} />
+          <div>
+            <div className="temp">{temp && temp.toFixed() || '--'}<span className="unit">°C</span></div>
+            <div><img src={require<string>('./assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
+              {humidity && humidity.toFixed() || '--'}<span className="unit">%</span>
+              </div>
+          </div>
+        </div>
+      </div>
+      {this.props.expanded && <div className="row" style={{marginTop: '0.5rem'}}>
+        <img className="ss-icon" src={require<string>('./assets/share-icon.svg')} />
+        <img className="ss-icon" src={require<string>('./assets/star-icon.svg')} />
+        <a className="details-link" style={{marginLeft: 'auto'}}
+          onClick={this.props.onClickDetails}>Sensor Details ></a>
+      </div>}
+    </div>;
+  }
+})`
+  background: white;
+  color: black;
+  padding: 0.5rem;
+
+  display: flex;
+  flex-direction: column;
+
+  transition: all 1s ease;
+
+  & .sensorName {
+    font-size: 1.3rem;
+  }
+
+  & .qualityText {
+    text-transform: uppercase;
+  }
+
+  & .row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  & .temp {
+    font-size: 1.3em;
+  }
+  & .unit {
+    opacity: 0.6;
+  }
+
+  & .icon {
+    width: 3rem;
+    height: 3rem;
+    margin-right: 0.5rem;
+  }
+
+  & .ss-icon {
+    width: 3rem;
+    height: 3rem;
+    padding: 0.5rem;
+  }
+
+  & .details-link {
+    color: #039;
+    padding: 0 1rem;
+  }
+`;
+
+const SensorAndMapList = styled.div`
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+`;
 
 const RootDiv = styled.div`
   display: flex;
   flex-direction: column;
   color: white;
-  padding: 0.5rem;
   background: #E3ECF1;
+  height: 100%;
 `;
 
 const { injectGlobal } = require<any>('styled-components');
@@ -77,6 +212,8 @@ injectGlobal`
     box-sizing: inherit;
     margin: 0;
     padding: 0;
+    font-size: inherit;
+    font-weight: inherit;
   }
 
   /* Use single-direction margins.

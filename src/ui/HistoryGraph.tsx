@@ -13,7 +13,6 @@ const styled = require<any>('styled-components').default;
 
 interface HistorySvgGraphProps {
   data: SensorReading[];
-  theme: 'light' | 'dark';
   mode: GraphMode;
 }
 
@@ -251,7 +250,6 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
 
 interface HistoryGraphProps {
   sensor: Sensor;
-  theme: 'light' | 'dark';
 };
 
 @observer
@@ -293,7 +291,7 @@ export default class HistoryGraph extends React.Component<HistoryGraphProps, {}>
       }}>
         <div>Sat Nov 5, 2:40</div>
       </div>
-      <HistorySvgGraph data={samples} theme={this.props.theme} mode={this.mode} />
+      <HistorySvgGraph data={samples} mode={this.mode} />
     </HistoryGraphStyled>;
   }
 }

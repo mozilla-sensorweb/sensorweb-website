@@ -54,6 +54,7 @@ module.exports = {
     rules: [{
       oneOf: [
         { test: /\.tsx?$/, use: ['babel-loader', 'ts-loader'] },
+        { test: /index\.html/, use: 'file-loader?name=[name].[ext]' },
         { test: /(.*)/, use: 'file-loader?name=[name].[hash].[ext]',
           include: [
             path.resolve(__dirname, 'src')

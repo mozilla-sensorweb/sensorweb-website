@@ -13,7 +13,6 @@ export default styled((props: any) =>
 </div>)`
   background: white;
   color: #169ED4;
-  margin: -0.5rem -0.5rem 0.5rem !important;
   padding: 0.5rem 1rem;
 
   display: flex;
@@ -27,10 +26,10 @@ export default styled((props: any) =>
     margin: 0;
   }
 
-  &__links {
+  & .links {
     & a {
       display: inline-block;
-      padding: 0 1rem;
+      padding: 0 0.5rem;
       border-right: 1px solid #999;
       color: #999;
       font-size: smaller;
@@ -39,6 +38,7 @@ export default styled((props: any) =>
     }
     & a:last-child {
       border-right: 0px none;
+      margin-right: -0.5rem;
     }
   }
-`
+`;

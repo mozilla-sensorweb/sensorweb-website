@@ -63,8 +63,8 @@ const LeftRightSmallTextList = styled.ul`
   }
 `
 
-const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
-  { sensor?: Sensor, currentLocation: Location | undefined, theme: 'light'|'dark' }) {
+const SummaryBox = observer(function ({ sensor, currentLocation }:
+  { sensor?: Sensor, currentLocation: Location | undefined }) {
 
   let displayDistance = null;
   if (currentLocation && sensor) {
@@ -74,7 +74,7 @@ const SummaryBox = observer(function ({ sensor, currentLocation, theme }:
 
   const value = sensor && sensor.currentPm || 0;
   const readingTime = sensor && sensor.latestReading && moment(sensor.latestReading.date).fromNow();
-  const color = pmToColor(value, theme);
+  const color = pmToColor(value, 'light');
 
   return (
     <Section hidden={!sensor}>
@@ -103,7 +103,7 @@ const Section = styled.div`
   opacity: ${(props: any) => props.hidden ? 0 : 1};
   margin: 1rem;
   padding: 0.5rem;
-  background: rgba(42, 49, 57, 0.9);
+  background: rgba(0, 0, 0, 0.02);
   border-radius: 4px;
   transition: opacity 300ms ease;
 `;
@@ -129,7 +129,7 @@ const CurrentDetailsDiv = styled.div`
   justify-content: space-around;
 `;
 
-const CurrentDetails = observer(function ({ sensor, theme }: { theme: string, sensor?: Sensor }) {
+const CurrentDetails = observer(function ({ sensor }: { sensor?: Sensor }) {
   let displayTemp = '--°';
   let displayHumidity = '--%';
   if (sensor && sensor.currentTemperature !== undefined) {
@@ -161,52 +161,9 @@ interface SidebarState {
   loading: boolean;
 }
 
-const CompactFooterDiv = styled.div`
-  display: flex;
-  color: white;
-  background: green;
-  justify-content: space-around;
-  align-items: center;
-  height: 80px;
-  width: 100%;
-  position: absolute;
-
-  & .value {
-    font-weight: 200;
-    font-size: 4rem;
-    line-height: 1;
-    padding-left: 0.5rem;
-  }
-  & .label {
-    padding: 0.5rem;
-    font-weight: 200;
-    align-self: flex-end;
-  }
-  & .text {
-    padding-left: 1rem;
-    padding-right: 0.5rem;
-    flex: 1;
-  }
-`;
-
-function CompactFooter({ opacity, sensor }: { opacity: number, sensor?: Sensor }) {
-  const pm = sensor && sensor.currentPm || 0;
-  return <CompactFooterDiv style={{
-    zIndex: 1,
-    opacity: opacity,
-    visibility: opacity === 0 ? 'hidden' : 'visible',
-    backgroundColor: pmToColor(pm || 0, 'dark')
-  }}>
-    <div className="value">{pm}</div>
-    <div className="label">µg/m³<br />PM2.5</div>
-    <div className="text">Air Quality is {pmToQualityString(pm)}!</div>
-  </CompactFooterDiv>;
-}
-
 interface SidebarProps {
   currentLocation?: Location;
   selectedSensor?: Sensor;
-  isMobile: boolean
 }
 
 //import { observable} from 'mobx';
@@ -284,47 +241,28 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
   readonly SPRING_PROPS = { stiffness: 300, damping: 24 };
 
   render() {
-    let y = !this.props.isMobile ? this.state.minY :
-      (this.state.dragging || this.state.loading) ? this.state.y : spring(this.state.y, this.SPRING_PROPS);
-    let percentage = !this.props.isMobile ? 0 : this.state.y / this.state.maxY;
-
     let sensor = this.props.selectedSensor;
-    let theme: 'light' | 'dark' = 'light';
-    console.log('render sidebar', !!sensor);
+    //console.log('render sidebar', !!sensor);
 
-    return <Motion style={{ y: y }}>{({ y }: any) =>
-      <SidebarDiv
-        innerRef={(el: any) => this.el = el}
-        style={{ transform:
-          !this.props.isMobile ? 'none' :
-          this.state.loading ? `translateY(calc(100% - 80px))` : `translate3d(0, ${y}px, 0)` }}>
-        <CompactFooter
-          opacity={percentage}
-          sensor={sensor} />
-        <div style={{background: `url(${require<string>('../assets/taipei.jpg')})`,
+    return <SidebarDiv innerRef={(el: any) => this.el = el}>
+        <div style={{background: '#eee',
           backgroundSize: 'cover', display: 'flex', flexDirection: 'column', flex: '0 0 auto'}}>
           <SummaryBox
-            theme={theme}
             currentLocation={this.props.currentLocation}
             sensor={sensor} />
-          <CurrentDetails theme={theme} sensor={sensor} />
+          <CurrentDetails sensor={sensor} />
           <div className="waves">
-            <img src={theme === 'dark'
-                      ? require<string>('../assets/sidebar-waves-dark.png')
-                      : require<string>('../assets/sidebar-waves-light.png')} />
+            <img src={require<string>('../assets/sidebar-waves-light.png')} />
           </div>
         </div>
         <div className="bottomArea">
-          { sensor && <HistoryGraph sensor={sensor} theme={theme} /> }
+          { sensor && <HistoryGraph sensor={sensor} /> }
         </div>
-      </SidebarDiv>
-    }</Motion>;
+      </SidebarDiv>;
   }
 }
 
 const SidebarDiv = styled.div`
-  margin: 0.5rem;
-  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.3);
   flex: 0 0 350px;
   display: flex;
   flex-direction: column;

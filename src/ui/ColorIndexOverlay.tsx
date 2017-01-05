@@ -6,26 +6,12 @@ interface ColorIndexOverlayProps {
   //theme: 'light' | 'dark';
 }
 
-const OverlayWrapper = styled.div`
-  position: absolute;
-  z-index: 2;
-  bottom: 30px;
-  left: 10px;
-  background: white;
-  border-radius: 4px;
-  color: #333;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-  width: 250px;
-  padding: 15px;
-`;
-
 const Bars = styled.div`
   display: flex;
-  margin-top: 0.5rem;
 `;
 
 const ColorBar = styled.div`
-  height: 16px;
+  height: 1rem;
   width: calc(10% - 1px);
   margin: 0.5px;
   box-sizing: border-box;
@@ -47,7 +33,7 @@ const Labels = styled.div`
 const Label = styled.div`
   text-align: center;
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   box-sizing: border-box;
   border-right: 2px dotted #999;
   width: calc(30%);
@@ -61,14 +47,14 @@ const Label = styled.div`
 `;
 
 
-export default class ColorIndexOverlay extends React.Component<{}, {}> {
+export default styled(class ColorIndexOverlay extends React.Component<any, {}> {
   render() {
     const colors = getColorArray('light');
     const colorBars = colors.map((c, index) => {
       return <ColorBar key={index} style={{backgroundColor: c}} />
     });
     return (
-      <OverlayWrapper>
+      <div className={this.props.className}>
         {/*<div>PM 2.5 Index</div>*/}
         <Bars>
           {colorBars}
@@ -78,9 +64,18 @@ export default class ColorIndexOverlay extends React.Component<{}, {}> {
           <Label style={{ width: 'calc(40%)', color: colors[5] }}>Moderate</Label>
           <Label style={{ borderRightColor: 'transparent', color: colors[8] }}>High</Label>
         </Labels>
-      </OverlayWrapper>
+      </div>
     )
   }
-}
-
-
+})`
+  position: absolute;
+  z-index: 2;
+  bottom: 30px;
+  left: 10px;
+  background: white;
+  border-radius: 4px;
+  color: #333;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  width: 14rem;
+  padding: 0.5rem;
+`;

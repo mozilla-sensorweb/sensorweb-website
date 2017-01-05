@@ -10,6 +10,7 @@ import * as d3 from 'd3';
 
 import { Sensor, Location } from '../state';
 import ColorIndexOverlay from './ColorIndexOverlay';
+import SearchBox from './SearchBox';
 
 import NumberTween from './NumberTween';
 
@@ -156,7 +157,7 @@ class SensorMarker extends React.Component<SensorMarkerProps, {}> {
 
   render() {
     const pm = this.props.sensor.currentPm || 0;
-    let bgColor = d3.hsl(d3.rgb(pmToColor(pm, 'dark')));
+    let bgColor = d3.hsl(d3.rgb(pmToColor(pm, 'light')));
     let shadowColor = d3.hsl(bgColor);
     shadowColor.opacity = 0.6;
 
@@ -198,99 +199,36 @@ class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {}> {
   }
 }
 
-interface SearchBoxProps {
-  onSearch(address: string): void;
-  searching?: boolean;
-}
 
-
-const StyledSearchBox = styled.div`
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  width: 30rem;
-  max-width: calc(100% - 2rem);
-  z-index: 10;
-  & input {
-    font-size: 1.5rem;
-    padding: .5rem;
-    width: 100%;
-    border-radius: 3px;
-    font-family: inherit;
-    border: 1px solid #bbb;
-    box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
-    -webkit-appearance: none; /* no inset shadow */
-
-    &[disabled] {
-      color: #aaa;
-      opacity: 1;
-    }
-  }
-`;
-
-@observer
-class SearchBox extends React.Component<SearchBoxProps, {}> {
-  @observable currentValue = '';
-  input: HTMLInputElement;
-
-  @action onChange(newValue: string) {
-    this.currentValue = newValue;
-  }
-
-  @action onEnter() {
-    let value = this.currentValue;
-    this.currentValue = '';
-    this.input.blur();
-    this.props.onSearch(value);
-  }
-
-  render() {
-    return <StyledSearchBox>
-      <input
-        type="text"
-        ref={el => this.input = el}
-        value={this.props.searching ? 'Searching... ' : this.currentValue}
-        disabled={this.props.searching}
-        placeholder="Enter Address"
-        onKeyPress={(e) => e.key === 'Enter' && this.onEnter()}
-        onChange={(e) => this.onChange(e.currentTarget.value)} />
-    </StyledSearchBox>;
-  }
-}
 
 
 interface SensorMapProps {
+  style?: any;
   knownSensors: ObservableMap<Sensor>;
   selectedSensor?: Sensor;
   currentGpsLocation?: Location;
   onClickSensor(sensor: Sensor): void;
-  onSetLocation(location: Location): void;
+  onMapLoaded(map: google.maps.Map): void;
 }
 
 const StyledMap = styled.div`
-  margin: 0.5rem;
-  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.3);
-  position: relative;
   background: #F5F6F7;
   flex-grow: 1;
 `;
 
 @renderOnResize
 @observer
-export default class SensorMap extends React.Component<SensorMapProps, {}> {
+export default class SensorMap extends React.Component<SensorMapProps, ResizeState> {
   el: HTMLElement;
   map?: google.maps.Map;
   markerLayerDiv: HTMLElement;
   markers: google.maps.OverlayView[] = [];
   projection: google.maps.MapCanvasProjection;
-  @observable searching: boolean;
+  didInitialSize = false;
 
   render() {
     return (
       <StyledMap innerRef={(el: any) => this.el = el}>
-        <SearchBox
-          searching={this.searching}
-          onSearch={this.onSearch} />
         <ColorIndexOverlay />
       </StyledMap>
     );
@@ -309,7 +247,18 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
   }
 
   componentDidUpdate() {
-    this.map && google.maps.event.trigger(this.map, 'resize');
+    console.log('updated', this.state);
+    if (this.map) {
+      // The map might not know its size initially. When we first get the size,
+      // update our center to point to the new, resized center.
+      const center = this.map!.getCenter();
+      google.maps.event.trigger(this.map, 'resize');
+      if (this.state.width > 0 && !this.didInitialSize) {
+        this.didInitialSize = true;
+        this.map.setCenter(center);
+      }
+
+    }
     this.renderMarkerLayer();
   }
 
@@ -338,7 +287,6 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
       disableDefaultUI: true,
       clickableIcons: false,
       gestureHandling: 'greedy',
-      zoomControl: true,
       noClear: true
     } as google.maps.MapOptions);
 
@@ -371,6 +319,8 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
     this.map.addListener('center_changed', centerChangedHandler);
     this.onMapCenterChanged();
 
+    this.props.onMapLoaded(this.map);
+
     window.dispatchEvent(new CustomEvent('READY'));
   }
 
@@ -384,31 +334,6 @@ export default class SensorMap extends React.Component<SensorMapProps, {}> {
     const center = new google.maps.LatLng(unwrappedCenter.lat(), unwrappedCenter.lng());
     return this.props.currentGpsLocation && this.map &&
       this.props.currentGpsLocation.equals(new Location(center.lat(), center.lng()));
-  }
-
-  onSearch = (address: string) => {
-    if (!this.map) {
-      return; // XXX: we need to wait for map to load and retry
-    }
-    this.searching = true;
-    let geo = new google.maps.Geocoder();
-    geo.geocode({ address }, (results, status) => {
-      this.searching = false;
-      // XXX if no address, handle error (maybe clear input?)
-      if (!results || !results[0]) {
-        console.log('unable to geocode: ' + status);
-        //this.addressInput.blur();
-        return;
-      }
-      let loc = results[0].geometry.location;
-      this.map!.panTo(loc);
-      this.props.onSetLocation(new Location(loc.lat(), loc.lng()));
-      // runInAction(() => {
-      //   this.selectLocation(results[0].geometry.location);
-      //   this.locationString = results[0].formatted_address;
-      //   this.typedAddress = '';
-      // });
-    });
   }
 
   onMapCenterChanged() {
