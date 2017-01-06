@@ -175,7 +175,7 @@ class SensorMarker extends React.Component<SensorMarkerProps, {}> {
 }
 
 interface SensorMarkerLayerProps {
-  onClickSensor: (sensor: Sensor) => void;
+  onClickSensor: (sensor?: Sensor) => void;
   bounds: google.maps.LatLngBounds;
   projection: google.maps.MapCanvasProjection;
   knownSensors: ObservableMap<Sensor>;
@@ -207,7 +207,7 @@ interface SensorMapProps {
   knownSensors: ObservableMap<Sensor>;
   selectedSensor?: Sensor;
   currentGpsLocation?: Location;
-  onClickSensor(sensor: Sensor): void;
+  onClickSensor(sensor?: Sensor): void;
   onMapLoaded(map: google.maps.Map): void;
 }
 
@@ -317,6 +317,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
     let centerChangedHandler = _.debounce(this.onMapCenterChanged.bind(this), 500);
     //this.disposers.push(centerChangedHandler);
     this.map.addListener('center_changed', centerChangedHandler);
+    this.map.addListener('click', this.onClick)
     this.onMapCenterChanged();
 
     this.props.onMapLoaded(this.map);
@@ -325,6 +326,10 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   gpsControl: HTMLElement;
+
+  onClick = () => {
+    this.props.onClickSensor();
+  }
 
   get isCurrentlyTrackingGps() {
     if (!this.map) {

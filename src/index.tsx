@@ -69,7 +69,7 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
     );
   }
 
-  onClickSensor = (sensor: Sensor) => {
+  onClickSensor = (sensor?: Sensor) => {
     this.props.appState.viewSensor(sensor);
   };
 

@@ -22,8 +22,8 @@ export class AppState {
     // }
   }
 
-  @action viewSensor(sensor: Sensor) {
-    this.selectedSensor = sensor;
+  @action viewSensor(sensor?: Sensor) {
+    this.selectedSensor = sensor || undefined; // we explicitly allow undefined
   }
 
   @action viewSensorDetails(sensor: Sensor) {
@@ -54,12 +54,7 @@ export class AppState {
       let location = new Location(loc.lat(), loc.lng());
       this.map!.panTo(loc);
 
-      let closestSensor = this.closestSensorToLocation(location);
-      if (closestSensor) {
-        this.viewSensor(closestSensor);
-      } else {
-        this.selectedSensor = undefined;
-      }
+      this.viewSensor(this.closestSensorToLocation(location));
     });
   }
 
