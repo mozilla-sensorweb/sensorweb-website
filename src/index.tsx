@@ -13,6 +13,7 @@ import PageHeader from './ui/PageHeader';
 import SensorDetailsPanel from './ui/SensorDetailsPanel';
 import MobileHeader from './ui/MobileHeader';
 import SensorListItem from './ui/SensorListItem';
+import Drawer from './ui/Drawer';
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
 import { AppState, Sensor, Location } from './state';
@@ -25,6 +26,7 @@ import { observable } from 'mobx';
 @observer
 class Root extends React.Component<{ appState: AppState }, ResizeState> {
   @observable expanded = true;
+  @observable drawerOpened = false;
 
   constructor(props: any) {
     super(props);
@@ -39,34 +41,45 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
     };
     return (
       <ThemeProvider theme={theme}>
-        <RootDiv>
-          {!isMobile && <PageHeader />}
-          <MobileHeader
-            searching={appState.isSearchingForLocation}
-            onSearch={appState.searchForLocation.bind(appState)} />
-          <SensorAndMapList>
-            <SensorMap
-              style={{width: '100%', flexGrow: 1}}
-              currentGpsLocation={appState.currentGpsLocation}
-              knownSensors={appState.knownSensors}
-              selectedSensor={appState.selectedSensor}
-              onMapLoaded={appState.onMapLoaded.bind(appState)}
-              onClickSensor={this.onClickSensor} />
-            {appState.selectedSensor &&
-              <SensorListItem
-                onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
-                onClickDetails={this.onClickDetails}
-                expanded={this.expanded}
-                sensor={appState.selectedSensor} />}
-          </SensorAndMapList>
-          {appState.viewingSensorDetails &&
-            <SensorDetailsPanel
-              onClose={() => appState.stopViewingSensorDetails()}
-              currentLocation={appState.currentGpsLocation}
-              sensor={appState.selectedSensor!} />}
-        </RootDiv>
+        <Drawer open={this.drawerOpened} onClose={this.onCloseDrawer}>
+          <RootDiv>
+            {!isMobile && <PageHeader />}
+            <MobileHeader
+              searching={appState.isSearchingForLocation}
+              onOpenDrawer={this.onOpenDrawer}
+              onSearch={appState.searchForLocation.bind(appState)} />
+            <SensorAndMapList>
+              <SensorMap
+                style={{width: '100%', flexGrow: 1}}
+                currentGpsLocation={appState.currentGpsLocation}
+                knownSensors={appState.knownSensors}
+                selectedSensor={appState.selectedSensor}
+                onMapLoaded={appState.onMapLoaded.bind(appState)}
+                onClickSensor={this.onClickSensor} />
+              {appState.selectedSensor &&
+                <SensorListItem
+                  onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
+                  onClickDetails={this.onClickDetails}
+                  expanded={this.expanded}
+                  sensor={appState.selectedSensor} />}
+            </SensorAndMapList>
+            {appState.viewingSensorDetails &&
+              <SensorDetailsPanel
+                onClose={() => appState.stopViewingSensorDetails()}
+                currentLocation={appState.currentGpsLocation}
+                sensor={appState.selectedSensor!} />}
+          </RootDiv>
+        </Drawer>
       </ThemeProvider>
     );
+  }
+
+  onCloseDrawer = () => {
+    this.drawerOpened = false;
+  }
+
+  onOpenDrawer = () => {
+    this.drawerOpened = true;
   }
 
   onClickSensor = (sensor?: Sensor) => {
