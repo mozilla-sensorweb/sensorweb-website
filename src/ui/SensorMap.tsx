@@ -16,7 +16,7 @@ import NumberTween from './NumberTween';
 
 const MAPS_API_KEY = 'AIzaSyA_QULMpHLgnha_jMe-Ie-DancN1Bz4uEE';
 
-const { default: styled, css, injectGlobal } = require<any>('styled-components');
+const { default: styled, css, injectGlobal, keyframes } = require<any>('styled-components');
 
 injectGlobal`
   .gps-control {
@@ -41,7 +41,13 @@ injectGlobal`
       opacity: 1;
     }
   }
-`
+`;
+
+const pulsate = keyframes`
+  0% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 1; }
+`;
+
 
 class GoogleMapsLoader {
   @observable loaded = false;
@@ -101,12 +107,16 @@ const MarkerShadow = styled.div`
   opacity: ${(props: any) => props.selected ? 1 : 0};
   transition: opacity 300ms ease-out, transform 300ms cubic-bezier(0.355, 1.395, 0.605, 0.975);
   transform: scale(${(props: any) => props.selected ? 1 : 0.5});
+  animation: ${(props: any) => props.selected ? pulsate + ' 1.5s ease-in-out' : 'none'};
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  z-index: -1;
 `;
 
 const MarkerNumberWrapper = styled.span`
@@ -166,7 +176,7 @@ class SensorMarker extends React.Component<SensorMarkerProps, {}> {
       onClick={(e: any) => this.props.onClick(this.props.sensor)}>
       <MarkerShadow
         selected={this.props.selected}
-        style={{boxShadow: `0 0 0 10px ${shadowColor}`}} />
+        style={{backgroundColor: shadowColor}} />
       <MarkerNumberWrapper
         backgroundColor={bgColor}><NumberTween value={pm} />
       </MarkerNumberWrapper>
