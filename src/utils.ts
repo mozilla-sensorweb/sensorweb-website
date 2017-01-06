@@ -1,12 +1,3 @@
-export function bem(componentName: string) {
-  return function(...classes: string[]) {
-    if (classes.length === 0) {
-      return componentName;
-    }
-    return classes.map(klass => componentName + '__' + klass).join(' ');
-  }
-}
-
 export function pickFromArray(array: any[], n: number): any[] {
   let space = Math.floor(array.length / n);
   if (space === 0) {

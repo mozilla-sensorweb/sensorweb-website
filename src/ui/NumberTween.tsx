@@ -37,6 +37,11 @@ function startAnimationLoopIfNecessary() {
   }
 }
 
+/**
+ * Smoothly animate a number from one value to another. Simple! Usage:
+ *
+ *   <NumberTween>{myNumber}</NumberTween>
+ */
 export default class NumberTween extends React.Component<Props, State> {
   static duration = 1000;
   currentTween?: Tween;

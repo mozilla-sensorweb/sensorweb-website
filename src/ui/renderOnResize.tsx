@@ -1,6 +1,10 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
+/**
+ * Automatically rerender the component when the window resizes.
+ * Your React.Component should define its state as a `ResizeState` interface.
+ */
 export function renderOnResize<P>(target: React.ComponentClass<P>) {
   let componentDidMount = target.prototype.componentDidMount;
   let componentWillUnmount = target.prototype.componentWillUnmount;

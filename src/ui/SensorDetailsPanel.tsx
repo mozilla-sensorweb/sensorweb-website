@@ -12,6 +12,9 @@ interface SensorDetailsPanelProps {
 
 const TRANSITION_TIME_MS = 300;
 
+/**
+ * The popup that shows the details of an individual sensor, including its graph, etc.
+ */
 export default class SensorDetailsPanel extends React.Component<SensorDetailsPanelProps, any> {
   el: HTMLElement;
 

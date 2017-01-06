@@ -8,6 +8,9 @@ export interface SearchBoxProps {
   searching?: boolean;
 }
 
+/**
+ * The box you type an address into. It knows nothing about what happens to the address.
+ */
 @observer
 export default class SearchBox extends React.Component<SearchBoxProps, {}> {
   @observable currentValue = '';
@@ -39,7 +42,6 @@ export default class SearchBox extends React.Component<SearchBoxProps, {}> {
 }
 
 const SearchBoxDiv = styled.div`
-
   width: 100%;
   flex-grow: 1;
   display: flex;

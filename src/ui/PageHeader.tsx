@@ -2,15 +2,20 @@ import * as React from 'react';
 
 const { default: styled } = require<any>('styled-components');
 
-export default styled((props: any) =>
-  <div className={props.className}>
-    <h1>SensorWeb</h1>
-    <div className="links">
-      <a href="#">Contribute!</a>
-      <a href="#">Help</a>
-      <a href="#">Sign in / Join</a>
-    </div>
-</div>)`
+export default function PageHeader(props: any) {
+  return (
+    <PageHeaderDiv>
+      <h1>SensorWeb</h1>
+      <div className="links">
+        <a href="#">Contribute!</a>
+        <a href="#">Help</a>
+        <a href="#">Sign in / Join</a>
+      </div>
+    </PageHeaderDiv>
+  );
+}
+
+const PageHeaderDiv = styled.div`
   background: white;
   color: #169ED4;
   padding: 0.5rem 1rem;

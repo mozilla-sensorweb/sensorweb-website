@@ -19,6 +19,43 @@ function pmToQualityString(pm: number) {
 }
 
 
+
+const SummaryBox = observer(function ({ sensor, currentLocation }:
+  { sensor?: Sensor, currentLocation: Location | undefined }) {
+
+  let displayDistance = null;
+  if (currentLocation && sensor) {
+    const km = sensor.location.distanceTo(currentLocation);
+    displayDistance = km.toFixed(1) + 'km';
+  }
+
+  const value = sensor && sensor.currentPm || 0;
+  const readingTime = sensor && sensor.latestReading && moment(sensor.latestReading.date).fromNow();
+  const color = pmToColor(value, 'light');
+
+  return (
+    <Section hidden={!sensor}>
+      <SummaryBoxDiv>
+        <div className="header">
+          <div className="airText"
+            style={{ color }}>Air Quality is {pmToQualityString(value)}!</div>
+        </div>
+        <LeftRightSmallTextList>
+          {displayDistance && <li>{displayDistance} from your location</li>}
+          <li>{readingTime}</li>
+        </LeftRightSmallTextList>
+        <div>
+          <div className="mainValue">
+            <div className="value" style={{ color }}>{value}</div>
+            <div className="label">µg/m³<br />PM2.5</div>
+          </div>
+        </div>
+      </SummaryBoxDiv>
+    </Section>
+  );
+});
+
+
 const SummaryBoxDiv = styled.div`
   display: flex;
   flex-direction: column;
@@ -61,42 +98,7 @@ const LeftRightSmallTextList = styled.ul`
   & li:last-child {
     float: right;
   }
-`
-
-const SummaryBox = observer(function ({ sensor, currentLocation }:
-  { sensor?: Sensor, currentLocation: Location | undefined }) {
-
-  let displayDistance = null;
-  if (currentLocation && sensor) {
-    const km = sensor.location.distanceTo(currentLocation);
-    displayDistance = km.toFixed(1) + 'km';
-  }
-
-  const value = sensor && sensor.currentPm || 0;
-  const readingTime = sensor && sensor.latestReading && moment(sensor.latestReading.date).fromNow();
-  const color = pmToColor(value, 'light');
-
-  return (
-    <Section hidden={!sensor}>
-      <SummaryBoxDiv>
-        <div className="header">
-          <div className="airText"
-            style={{ color }}>Air Quality is {pmToQualityString(value)}!</div>
-        </div>
-        <LeftRightSmallTextList>
-          {displayDistance && <li>{displayDistance} from your location</li>}
-          <li>{readingTime}</li>
-        </LeftRightSmallTextList>
-        <div>
-          <div className="mainValue">
-            <div className="value" style={{ color }}>{value}</div>
-            <div className="label">µg/m³<br />PM2.5</div>
-          </div>
-        </div>
-      </SummaryBoxDiv>
-    </Section>
-  );
-});
+`;
 
 
 const Section = styled.div`
@@ -151,7 +153,6 @@ const CurrentDetails = observer(function ({ sensor }: { sensor?: Sensor }) {
 });
 
 
-
 interface SidebarState {
   dragging: boolean;
   y: number;
@@ -166,9 +167,6 @@ interface SidebarProps {
   selectedSensor?: Sensor;
 }
 
-//import { observable} from 'mobx';
-
-//@observer
 export default class Sidebar extends React.Component<SidebarProps, SidebarState> {
   el: HTMLElement;
   offset: number;
@@ -186,7 +184,6 @@ export default class Sidebar extends React.Component<SidebarProps, SidebarState>
       loading: true
     };
   }
-//  @observable foo = 1;
 
   componentDidMount() {
     this.draggable = new physics.Draggable(this.el, {

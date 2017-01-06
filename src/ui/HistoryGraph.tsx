@@ -11,49 +11,100 @@ import { pmToColor, pmToGradientColor } from './colorScale';
 
 const styled = require<any>('styled-components').default;
 
-interface HistorySvgGraphProps {
+
+type GraphMode = 'hour' | 'day' | 'week' | 'month';
+
+
+interface HistoryGraphProps {
+  sensor: Sensor;
+};
+
+/**
+ * A widget displaying the graph of history, including links to change the view
+ * bounds (day / week / month). The actual SVG is rendered from the `HistorySvg`
+ * class, also located in this file.
+ */
+@observer
+export default class HistoryGraph extends React.Component<HistoryGraphProps, {}> {
+  @observable mode: GraphMode;
+
+  @action async setMode(mode: GraphMode) {
+    this.mode = mode;
+  }
+
+  componentWillMount() {
+    this.setMode('day');
+  }
+
+  render() {
+    const start = moment().subtract(1, this.mode).toDate();
+    const end = moment().toDate();
+    const samples = this.props.sensor.knownReadings.filter((reading, i) => reading.date <= end && reading.date >= start);
+
+    let modeLink = (mode: GraphMode, label: string) =>
+      <Link href="#"
+         selected={this.mode === mode}
+         onClick={() => this.setMode(mode)}>
+        {label}
+      </Link>;
+
+    return <HistoryGraphStyled>
+      <Links>
+        {modeLink('hour', 'Hour')}
+        {modeLink('day', 'Day')}
+        {modeLink('week', 'Week')}
+        {modeLink('month', 'Month')}
+      </Links>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <div>Sat Nov 5, 2:40</div>
+      </div>
+      <HistorySvg data={samples} mode={this.mode} />
+    </HistoryGraphStyled>;
+  }
+}
+
+const HistoryGraphStyled = styled.div`
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 1rem;
+`;
+
+const Links = styled.div`
+  text-align: right;
+`;
+
+const Link = styled.a`
+  display: inline-block;
+  padding: 0.5rem 0.8rem;
+  color: ${(props: any) => props.selected ? '#fff' : '#666'};
+  background-color: ${(props: any) => props.selected ? '#666' : 'transparent'};
+  border-radius: 3px;
+  text-decoration: none;
+`;
+
+
+
+
+
+
+
+
+interface HistorySvgProps {
   data: SensorReading[];
   mode: GraphMode;
 }
 
-type GraphMode = 'hour' | 'day' | 'week' | 'month';
-
-const StyledSvg = styled.svg`
-  flex-grow: 1;
-  min-height: 100px;
-`;
-
-const BottomAxis = styled.g`
-  font-size: 12px;
-
-  & text {
-    font-family: Rubik, Arial;
-    text-transform: uppercase;
-    fill: black;
-  }
-`;
-
-const PointerText = styled.text`
-  fill: white;
-  font-size: 20px;
-  text-anchor: middle;
-  font-family: Rubik, Arial;
-`;
-
-const AverageLine = styled.path`
-  fill: none;
-  stroke: black;
-  stroke-width: 3px;
-  opacity: 0.1;
-`;
-const Line = styled.path`
-  fill: none;
-  stroke: #333;
-  stroke-width: 3px;
-`;
-
+/**
+ * The SVG portion of the sensor history graph.
+ */
 @renderOnResize
-class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState> {
+class HistorySvg extends React.Component<HistorySvgProps, ResizeState> {
   margin = { top: 60, right: 20, bottom: 20, left: 20 };
   xAxis: SVGElement;
   //yAxis: SVGElement;
@@ -68,7 +119,7 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
   xExtent: Date[];
   yExtent: number[];
 
-  constructor(props: HistorySvgGraphProps) {
+  constructor(props: HistorySvgProps) {
     super(props);
     this.updateExtent(props);
   }
@@ -128,7 +179,7 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
   //   this.componentDidUpdate();
   // }
 
-  componentWillReceiveProps(nextProps: HistorySvgGraphProps) {
+  componentWillReceiveProps(nextProps: HistorySvgProps) {
     this.updateExtent(nextProps);
   }
 
@@ -139,7 +190,7 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
     month: 1000 * 60 * 60 * 24 * 31,
   }
 
-  updateExtent(props: HistorySvgGraphProps) {
+  updateExtent(props: HistorySvgProps) {
     console.log('update extent!');
     this.xExtent = d3.extent(props.data, d => d.date) as Date[];
     //this.xExtent[0] = new Date(Math.min(this.xExtent[0].getTime(), Date.now() - (this.modeToDuration as any)[props.mode]));
@@ -247,72 +298,37 @@ class HistorySvgGraph extends React.Component<HistorySvgGraphProps, ResizeState>
   }
 }
 
-
-interface HistoryGraphProps {
-  sensor: Sensor;
-};
-
-@observer
-export default class HistoryGraph extends React.Component<HistoryGraphProps, {}> {
-  @observable mode: GraphMode;
-
-  @action async setMode(mode: GraphMode) {
-    this.mode = mode;
-  }
-
-  componentWillMount() {
-    this.setMode('day');
-  }
-
-  render() {
-    const start = moment().subtract(1, this.mode).toDate();
-    const end = moment().toDate();
-    const samples = this.props.sensor.knownReadings.filter((reading, i) => reading.date <= end && reading.date >= start);
-
-    let modeLink = (mode: GraphMode, label: string) =>
-      <Link href="#"
-         selected={this.mode === mode}
-         onClick={() => this.setMode(mode)}>
-        {label}
-      </Link>;
-
-    return <HistoryGraphStyled>
-      <Links>
-        {modeLink('hour', 'Hour')}
-        {modeLink('day', 'Day')}
-        {modeLink('week', 'Week')}
-        {modeLink('month', 'Month')}
-      </Links>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexShrink: 0
-      }}>
-        <div>Sat Nov 5, 2:40</div>
-      </div>
-      <HistorySvgGraph data={samples} mode={this.mode} />
-    </HistoryGraphStyled>;
-  }
-}
-
-const HistoryGraphStyled = styled.div`
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  padding: 1rem;
+const StyledSvg = styled.svg`
+  flex-grow: 1;
+  min-height: 100px;
 `;
 
-const Links = styled.div`
-  text-align: right;
+const BottomAxis = styled.g`
+  font-size: 12px;
+
+  & text {
+    font-family: Rubik, Arial;
+    text-transform: uppercase;
+    fill: black;
+  }
 `;
 
-const Link = styled.a`
-  display: inline-block;
-  padding: 0.5rem 0.8rem;
-  color: ${(props: any) => props.selected ? '#fff' : '#666'};
-  background-color: ${(props: any) => props.selected ? '#666' : 'transparent'};
-  border-radius: 3px;
-  text-decoration: none;
+const PointerText = styled.text`
+  fill: white;
+  font-size: 20px;
+  text-anchor: middle;
+  font-family: Rubik, Arial;
+`;
+
+const AverageLine = styled.path`
+  fill: none;
+  stroke: black;
+  stroke-width: 3px;
+  opacity: 0.1;
+`;
+const Line = styled.path`
+  fill: none;
+  stroke: #333;
+  stroke-width: 3px;
 `;
 
