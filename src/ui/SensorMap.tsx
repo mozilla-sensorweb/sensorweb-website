@@ -239,7 +239,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   render() {
     return (
       <StyledMap innerRef={(el: any) => this.el = el}>
-        <ColorIndexOverlay />
+        {/*<ColorIndexOverlay />*/}
       </StyledMap>
     );
   }
