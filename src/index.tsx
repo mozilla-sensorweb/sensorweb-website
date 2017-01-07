@@ -14,6 +14,7 @@ import SensorDetailsPanel from './ui/SensorDetailsPanel';
 import MobileHeader from './ui/MobileHeader';
 import SensorListItem from './ui/SensorListItem';
 import Drawer from './ui/Drawer';
+import SettingsModal from './ui/SettingsModal';
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
 import { AppState, Sensor, Location } from './state';
@@ -27,6 +28,7 @@ import { observable } from 'mobx';
 class Root extends React.Component<{ appState: AppState }, ResizeState> {
   @observable expanded = true;
   @observable drawerOpened = false;
+  @observable settingsOpened = false;
 
   constructor(props: any) {
     super(props);
@@ -43,10 +45,12 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
       <ThemeProvider theme={theme}>
         <Drawer open={this.drawerOpened} onClose={this.onCloseDrawer}>
           <RootDiv>
+            {this.settingsOpened && <SettingsModal onClose={this.onCloseSettings} />}
             {!isMobile && <PageHeader />}
             <MobileHeader
               searching={appState.isSearchingForLocation}
               onOpenDrawer={this.onOpenDrawer}
+              onOpenSettings={this.onClickSettings}
               onSearch={appState.searchForLocation.bind(appState)} />
             <SensorAndMapList>
               <SensorMap
@@ -80,6 +84,14 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
 
   onOpenDrawer = () => {
     this.drawerOpened = true;
+  }
+
+  onClickSettings = () => {
+    this.settingsOpened = true;
+  }
+
+  onCloseSettings = () => {
+    this.settingsOpened = false;
   }
 
   onClickSensor = (sensor?: Sensor) => {

@@ -49,7 +49,8 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
             style={{width: '3rem', height: '3rem'}} />
           <div>
             <div className="temp">{temp && temp.toFixed() || '--'}<span className="unit">°C</span></div>
-            <div><img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
+            <div style={{whiteSpace: 'nowrap'}}>
+              <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
               {humidity && humidity.toFixed() || '--'}<span className="unit">%</span>
               </div>
           </div>

@@ -8,6 +8,7 @@ import SearchBox, { SearchBoxProps } from './SearchBox';
 interface MobileHeaderProps extends SearchBoxProps {
   onSearch(address: string): void;
   onOpenDrawer(): void;
+  onOpenSettings(): void;
   searching?: boolean;
 }
 
@@ -32,7 +33,8 @@ export default class MobileHeader extends React.Component<MobileHeaderProps, {}>
       <img className="menu" src={require<string>('../assets/menu-icon.svg')}
         onClick={this.props.onOpenDrawer} />
       <SearchBox {...this.props} />
-      <img className="settings" src={require<string>('../assets/settings-icon.svg')} />
+      <img className="settings" src={require<string>('../assets/settings-icon.svg')}
+        onClick={this.props.onOpenSettings} />
     </MobileHeaderDiv>;
   }
 }

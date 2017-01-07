@@ -7,7 +7,7 @@ interface DrawerProps {
 }
 
 const TRANSITION_TIME_MS = 200;
-const WIDTH = '20rem';
+const WIDTH = '260px'; // Make sure this is smaller than the screen! Or we could do more dynamic stuff.
 
 // TODO: Enable touch dragging to close.
 export default class Drawer extends React.Component<DrawerProps, {}> {
