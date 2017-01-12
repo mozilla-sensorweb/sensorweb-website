@@ -25,6 +25,12 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
     super(props);
   }
 
+  shouldComponentUpdate(nextProps: SensorMarkerProps) {
+    return nextProps.sensor !== this.props.sensor ||
+      nextProps.sensor.currentPm !== this.props.sensor.currentPm ||
+      nextProps.selected !== this.props.selected;
+  }
+
   render() {
     const pm = this.props.sensor.currentPm || 0;
     let bgColor = d3.hsl(d3.rgb(pmToColor(pm, 'light')));
@@ -32,7 +38,7 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
     shadowColor.opacity = 0.6;
 
     return <SensorMarkerStyledDiv
-      style={{ left: this.props.point.x, top: this.props.point.y }}
+      style={{ left: this.props.point.x, top: this.props.point.y, zIndex: this.props.selected ? 1 : 0 }}
       onClick={(e: any) => this.props.onClick(this.props.sensor)}>
       <MarkerShadow
         selected={this.props.selected}
@@ -53,7 +59,7 @@ interface SensorMarkerLayerProps {
 }
 export class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {}> {
   render() {
-    return <div className="SensorMarkerLayer">
+    return <SensorMarkerLayerDiv>
       {this.props.knownSensors.values()
         .filter(sensor => this.props.bounds.contains(sensor.location.toGoogle()))
         .map(sensor => {
@@ -65,9 +71,13 @@ export class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {
             onClick={this.props.onClickSensor}
             />;
         })}
-    </div>;
+    </SensorMarkerLayerDiv>;
   }
 }
+
+const SensorMarkerLayerDiv = styled.div`
+
+`
 
 const pulsate = keyframes`
   0% { transform: scale(1.3); opacity: 1; }
@@ -95,11 +105,10 @@ const MarkerNumberWrapper = styled.span`
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
-  transition: background-color 2s ease;
   width: 100%;
   height: 100%;
   background-color: ${(props: any) => props.backgroundColor};
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
 
   &::before {
     border: 5px solid white;

@@ -30,8 +30,14 @@ module.exports = {
     compress: true,
     port: 9000,
   },
-  devtool: isProd ? 'source-map' : 'inline-source-map',
+  devtool: 'source-map',//isProd ? 'source-map' : 'inline-source-map',
   plugins: [
+    // Need this plugin to enable React to use its production version:
+    new webpack.DefinePlugin({
+      'process.env': {
+        NODE_ENV: JSON.stringify('production')
+      }
+    }),
     new webpack.optimize.CommonsChunkPlugin({
       name: 'vendor'
     }),
