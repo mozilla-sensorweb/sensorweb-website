@@ -5,6 +5,24 @@ import Sensor from './Sensor';
 export { default as Location } from './Location';
 export { default as Sensor, SensorReading } from './Sensor';
 
+function geolocate(address: string) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.addEventListener('load', (evt: ProgressEvent) => {
+      try {
+        resolve(JSON.parse(request.responseText));
+      } catch (e) {
+        reject(e);
+      }
+    });
+    request.addEventListener('error', (evt: ProgressEvent) => {
+      reject(evt);
+    });
+    request.open('GET', `http://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(address)}`, true);
+    request.send();
+  });
+}
+
 export class AppState {
   @observable currentGpsLocation?: Location;
   @observable selectedSensor?: Sensor;
@@ -12,7 +30,7 @@ export class AppState {
   @observable viewingSensorDetails = false;
   @observable isSearchingForLocation = false;
 
-  map?: google.maps.Map;
+  map?: L.Map;
 
   @action setCurrentGpsLocation(location: Location) {
     this.currentGpsLocation = location;
@@ -33,29 +51,30 @@ export class AppState {
     this.viewingSensorDetails = false;
   }
 
-  @action onMapLoaded(map: google.maps.Map) {
+  @action onMapLoaded(map: L.Map) {
     this.map = map;
   }
 
-  @action searchForLocation(address: string) {
+
+  @action async searchForLocation(address: string) {
     if (!this.map) {
       return; // XXX: we need to wait for map to load and retry
     }
     this.isSearchingForLocation = true;
-    let geo = new google.maps.Geocoder();
-    geo.geocode({ address }, (results, status) => {
-      this.isSearchingForLocation = false;
-      // XXX if no address, handle error (maybe clear input?)
-      if (!results || !results[0]) {
-        console.log('unable to geocode: ' + status);
-        return;
+    try {
+      const results: any = await geolocate(address);
+      console.log('geo', results);
+      if (results[0]) {
+        let loc = new Location(parseFloat(results[0].lat), parseFloat(results[0].lon));
+        this.map!.panTo(loc.toGoogle());
+        this.viewSensor(this.closestSensorToLocation(loc));
       }
-      let loc = results[0].geometry.location;
-      let location = new Location(loc.lat(), loc.lng());
-      this.map!.panTo(loc);
-
-      this.viewSensor(this.closestSensorToLocation(location));
-    });
+    } catch(e) {
+      console.error(e);
+      return;
+    } finally {
+      this.isSearchingForLocation = false;
+    }
   }
 
   closestSensorToLocation(location: Location) {

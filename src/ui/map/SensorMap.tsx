@@ -9,15 +9,13 @@ import * as d3 from 'd3';
 
 import { Sensor, Location } from '../../state';
 
-import GoogleMapsLoader from './GoogleMapsLoader';
-import { SensorMarkerLayer } from './SensorMarker';
+import LeafletLoader from './LeafletLoader';
+import SensorMarker from './SensorMarker';
 
 
 const { default: styled, injectGlobal } = require<any>('styled-components');
 
-// Start loading the Google Maps JavaScript SDK now!
-const MAPS_API_KEY = 'AIzaSyA_QULMpHLgnha_jMe-Ie-DancN1Bz4uEE';
-let googleMapsLoader = new GoogleMapsLoader(MAPS_API_KEY);
+let leafletLoader = new LeafletLoader();
 
 interface SensorMapProps {
   style?: any;
@@ -25,7 +23,7 @@ interface SensorMapProps {
   selectedSensor?: Sensor;
   currentGpsLocation?: Location;
   onClickSensor(sensor?: Sensor): void;
-  onMapLoaded(map: google.maps.Map): void;
+  onMapLoaded(map: L.Map): void;
 }
 
 const StyledMap = styled.div`
@@ -37,10 +35,9 @@ const StyledMap = styled.div`
 @observer
 export default class SensorMap extends React.Component<SensorMapProps, ResizeState> {
   el: HTMLElement;
-  map?: google.maps.Map;
+  map?: L.Map;
   markerLayerDiv: HTMLElement;
-  markers: google.maps.OverlayView[] = [];
-  projection: google.maps.MapCanvasProjection;
+  sensorsToMarkers: Map<Sensor, L.Marker> = new Map();
   didInitialSize = false;
 
   render() {
@@ -52,7 +49,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   componentDidMount() {
-    let cancel = when(() => googleMapsLoader.loaded, () => {
+    let cancel = when(() => leafletLoader.loaded, () => {
       this.loadMap();
     });
   }
@@ -64,15 +61,12 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   componentDidUpdate() {
-    console.log('updated', this.state);
     if (this.map) {
-      // The map might not know its size initially. When we first get the size,
-      // update our center to point to the new, resized center.
-      const center = this.map!.getCenter();
-      google.maps.event.trigger(this.map, 'resize');
       if (this.state.width > 0 && !this.didInitialSize) {
         this.didInitialSize = true;
-        this.map.setCenter(center);
+        this.map.invalidateSize(false);
+      } else {
+        this.map.invalidateSize(true);
       }
 
     }
@@ -81,49 +75,71 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
   componentWillReceiveProps(nextProps: SensorMapProps) {
     if (!this.props.currentGpsLocation && nextProps.currentGpsLocation && this.map) {
-      this.map.setCenter(nextProps.currentGpsLocation.toGoogle());
+      this.map.panTo(nextProps.currentGpsLocation.toGoogle());
     }
   }
 
   renderMarkerLayer() {
-    if (!this.projection || !this.map) {
+    if (!this.map) {
       return;
     }
-    ReactDOM.render(<SensorMarkerLayer
-      bounds={this.map.getBounds()}
-      projection={this.projection}
-      knownSensors={this.props.knownSensors}
-      selectedSensor={this.props.selectedSensor}
-      onClickSensor={this.props.onClickSensor} />, this.markerLayerDiv);
+    const bounds = this.map.getBounds();
+    // Remove markers that are no longer in bounds.
+    this.sensorsToMarkers.forEach((marker, sensor) => {
+      if (!bounds.contains(marker.getLatLng())) {
+        this.map!.removeLayer(marker);
+        this.sensorsToMarkers.delete(sensor);
+      }
+    });
+    // Add known sensors that are in bounds.
+    this.props.knownSensors.forEach((sensor: Sensor) => {
+      if (!bounds.contains(sensor.location.toGoogle())) {
+        return;
+      }
+      let marker = this.sensorsToMarkers.get(sensor);
+      if (!marker) {
+        marker = L.marker(sensor.location.toGoogle(), {
+          icon: L.divIcon({})
+        }).addTo(this.map!);
+        marker.on('click', () => this.props.onClickSensor(sensor));
+        this.sensorsToMarkers.set(sensor, marker);
+      }
+      const isSelected = (sensor === this.props.selectedSensor);
+      marker.setZIndexOffset(isSelected ? 10000 : 0);
+      ReactDOM.render(
+        <SensorMarker
+          key={sensor.id}
+          sensor={sensor}
+          selected={isSelected}
+          onClick={this.props.onClickSensor}
+          />, marker.getElement());
+
+    });
   }
 
   loadMap() {
-    this.map = new google.maps.Map(this.el, {
-      center: { lat: 23.7, lng: 120.96 },
+    const isMobile = ('ontouchstart' in document.documentElement);
+    this.map = L.map(this.el, {
+      zoomControl: false,
+      center: [23.7, 120.96],
       zoom: 11,
-      disableDefaultUI: true,
-      clickableIcons: false,
-      gestureHandling: 'greedy',
-      noClear: true
-    } as google.maps.MapOptions);
+      attributionControl: true,
+      trackResize: false,
+      boxZoom: false,
+    } as L.MapOptions);
 
-    this.map.addListener('bounds_changed', () => {
+    if (!isMobile) {
+      this.map.addControl(L.control.zoom({ position: 'bottomright' }));
+    }
+
+    this.map.addLayer(L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+    }));
+
+
+    this.map.on('move', () => {
       this.renderMarkerLayer();
     });
-
-    let overlay = new google.maps.OverlayView();
-    overlay.onAdd = () => {
-      this.markerLayerDiv = document.createElement('div');
-      overlay.getPanes().overlayMouseTarget.appendChild(this.markerLayerDiv);
-    };
-    overlay.onRemove = () => {
-      this.markerLayerDiv.parentElement!.removeChild(this.markerLayerDiv);
-    };
-    overlay.draw = () => {
-      this.projection = overlay.getProjection();
-      this.renderMarkerLayer();
-    };
-    overlay.setMap(this.map);
 
     if (this.props.currentGpsLocation) {
       this.selectLocation(this.props.currentGpsLocation);
@@ -133,8 +149,9 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
     let centerChangedHandler = _.debounce(this.onMapCenterChanged.bind(this), 500);
     //this.disposers.push(centerChangedHandler);
-    this.map.addListener('center_changed', centerChangedHandler);
-    this.map.addListener('click', this.onClick)
+    this.map.on('move', centerChangedHandler);
+    this.map.on('click', this.onClick);
+    this.map.on('gps', this.onGps);
     this.onMapCenterChanged();
 
     this.props.onMapLoaded(this.map);
@@ -145,17 +162,16 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   gpsControl: HTMLElement;
 
   onClick = () => {
-    this.props.onClickSensor();
+    this.props.onClickSensor(undefined);
   }
 
   get isCurrentlyTrackingGps() {
     if (!this.map) {
       return false;
     }
-    const unwrappedCenter = this.map.getCenter();
-    const center = new google.maps.LatLng(unwrappedCenter.lat(), unwrappedCenter.lng());
+    const center = this.map.getCenter().wrap();
     return this.props.currentGpsLocation && this.map &&
-      this.props.currentGpsLocation.equals(new Location(center.lat(), center.lng()));
+      this.props.currentGpsLocation.equals(new Location(center.lat, center.lng));
   }
 
   onMapCenterChanged() {
@@ -165,20 +181,32 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
   selectLocation(location: Location) {
     if (this.map) {
-      this.map.setCenter(location.toGoogle());
+      this.map.panTo(location.toGoogle());
     }
+  }
+
+  onGps = () => {
+    this.props.currentGpsLocation && this.selectLocation(this.props.currentGpsLocation);
   }
 
   addGpsControl() {
     this.gpsControl = document.createElement('div');
-    let controlText = document.createElement('img');
-    this.gpsControl.classList.add('gps-control');
-    controlText.src = require<string>('../../assets/gps-pointer.svg');
-    this.gpsControl.appendChild(controlText);
-    this.gpsControl.onclick = (e) => {
-      this.props.currentGpsLocation && this.selectLocation(this.props.currentGpsLocation);
-    };
-    this.map!.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(this.gpsControl);
+
+    const control: L.Control = new (L.Control.extend({
+      options: {
+        position: 'bottomright'
+      },
+
+      onAdd: (map: L.Map) => {
+        let controlText = document.createElement('img');
+        this.gpsControl.classList.add('gps-control');
+        controlText.src = require<string>('../../assets/gps-pointer.svg');
+        this.gpsControl.appendChild(controlText);
+        this.gpsControl.onclick = () => { map.fire('gps'); };
+        return this.gpsControl;
+      }
+    }))();
+    control.addTo(this.map!);
   }
 }
 
@@ -206,3 +234,4 @@ injectGlobal`
     }
   }
 `;
+

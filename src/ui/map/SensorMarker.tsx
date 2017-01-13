@@ -13,7 +13,6 @@ import NumberTween from '../NumberTween';
 const { default: styled, keyframes } = require<any>('styled-components');
 
 interface SensorMarkerProps {
-  point: { x: number, y: number };
   sensor: Sensor;
   onClick: (sensor: Sensor) => void;
   selected: boolean;
@@ -38,7 +37,7 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
     shadowColor.opacity = 0.6;
 
     return <SensorMarkerStyledDiv
-      style={{ left: this.props.point.x, top: this.props.point.y, zIndex: this.props.selected ? 1 : 0 }}
+      style={{ zIndex: this.props.selected ? 1 : 0 }}
       onClick={(e: any) => this.props.onClick(this.props.sensor)}>
       <MarkerShadow
         selected={this.props.selected}
@@ -50,34 +49,6 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
   }
 }
 
-interface SensorMarkerLayerProps {
-  onClickSensor: (sensor?: Sensor) => void;
-  bounds: google.maps.LatLngBounds;
-  projection: google.maps.MapCanvasProjection;
-  knownSensors: ObservableMap<Sensor>;
-  selectedSensor?: Sensor;
-}
-export class SensorMarkerLayer extends React.Component<SensorMarkerLayerProps, {}> {
-  render() {
-    return <SensorMarkerLayerDiv>
-      {this.props.knownSensors.values()
-        .filter(sensor => this.props.bounds.contains(sensor.location.toGoogle()))
-        .map(sensor => {
-          return <SensorMarker
-            key={sensor.id}
-            point={this.props.projection.fromLatLngToDivPixel(sensor.location.toGoogle())}
-            sensor={sensor}
-            selected={sensor === this.props.selectedSensor}
-            onClick={this.props.onClickSensor}
-            />;
-        })}
-    </SensorMarkerLayerDiv>;
-  }
-}
-
-const SensorMarkerLayerDiv = styled.div`
-
-`
 
 const pulsate = keyframes`
   0% { transform: scale(1.3); opacity: 1; }

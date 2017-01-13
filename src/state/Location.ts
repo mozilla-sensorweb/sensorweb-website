@@ -18,10 +18,10 @@ export default class Location {
 
   // Google Maps must be loaded for this to work.
   // That's why we don't just use a raw google.maps.LatLng object.
-  private google?: google.maps.LatLng;
+  private google?: L.LatLng;
   toGoogle() {
     if (!this.google) {
-      this.google = new google.maps.LatLng(this.latitude, this.longitude);
+      this.google = L.latLng(this.latitude, this.longitude);
     }
     return this.google;
   }

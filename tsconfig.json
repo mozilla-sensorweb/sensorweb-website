@@ -12,7 +12,7 @@
     "experimentalDecorators": true,
     "jsx": "react",
     "types": [
-      "googlemaps"
+      "leaflet"
     ]
  },
   "include": [
