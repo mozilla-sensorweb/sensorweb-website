@@ -4,6 +4,7 @@ const styled = require<any>('styled-components').default;
 interface DrawerProps {
   open: boolean;
   onClose: Function;
+  contents: any;
 }
 
 const TRANSITION_TIME_MS = 200;
@@ -15,13 +16,12 @@ export default class Drawer extends React.Component<DrawerProps, {}> {
     return (
       <DrawerWrapper>
         <DrawerDiv open={this.props.open}>
-          <h1>Locations</h1>
+          {this.props.contents}
         </DrawerDiv>
         <ContentsDiv open={this.props.open}>
           {this.props.children}
         </ContentsDiv>
         <Overlay open={this.props.open} onClick={this.props.onClose} />
-
       </DrawerWrapper>
     );
   }
@@ -38,7 +38,7 @@ const DrawerDiv = styled.div`
   left: -${WIDTH};
   width: ${WIDTH};
   height: 100vh;
-  z-index: 2;
+  z-index: 10000;
   background: white;
   transform: translateX(${(props: any) => props.open ? WIDTH : '0'});
 
@@ -66,6 +66,6 @@ const Overlay = styled.div`
   transition: all ${TRANSITION_TIME_MS}ms ease-out;
   opacity: ${(props: any) => props.open ? '0.3' : '0'};
   pointer-events: ${(props: any) => props.open ? 'all' : 'none'};
-  z-index: 1;
+  z-index: 9999;
   background: black;
 `;

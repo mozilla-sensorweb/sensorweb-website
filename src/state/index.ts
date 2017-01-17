@@ -4,6 +4,7 @@ import Location from './Location';
 import Sensor from './Sensor';
 export { default as Location } from './Location';
 export { default as Sensor, SensorReading } from './Sensor';
+import Settings from './Settings';
 
 function geolocate(address: string) {
   return new Promise((resolve, reject) => {
@@ -29,6 +30,8 @@ export class AppState {
   @observable knownSensors = new ObservableMap<Sensor>();
   @observable viewingSensorDetails = false;
   @observable isSearchingForLocation = false;
+  @observable isFavoritingSensor = false;
+  settings = new Settings();
 
   map?: L.Map;
 

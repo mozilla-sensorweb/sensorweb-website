@@ -4,12 +4,14 @@ import { observer } from 'mobx-react';
 const { default: styled } = require<any>('styled-components');
 
 import SearchBox, { SearchBoxProps } from './SearchBox';
+import HamburgerIcon from './HamburgerIcon';
 
 interface MobileHeaderProps extends SearchBoxProps {
   onSearch(address: string): void;
-  onOpenDrawer(): void;
+  onToggleDrawer(): void;
   onOpenSettings(): void;
   searching?: boolean;
+  drawerOpened?: boolean;
 }
 
 @observer
@@ -30,8 +32,7 @@ export default class MobileHeader extends React.Component<MobileHeaderProps, {}>
 
   render() {
     return <MobileHeaderDiv>
-      <img className="menu" src={require<string>('../assets/menu-icon.svg')}
-        onClick={this.props.onOpenDrawer} />
+      <HamburgerIcon drawerOpened={this.props.drawerOpened} onClick={this.props.onToggleDrawer} />
       <SearchBox {...this.props} />
       <img className="settings" src={require<string>('../assets/settings-icon.svg')}
         onClick={this.props.onOpenSettings} />

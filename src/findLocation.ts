@@ -1,4 +1,5 @@
 import { Location } from './state';
+import { fetchJson } from './utils';
 
 export function findLocation(): Promise<Location> {
   return findLocationWithMozillaLocationService();
@@ -7,26 +8,12 @@ export function findLocation(): Promise<Location> {
 
 
 async function findLocationWithMozillaLocationService() {
-  return new Promise<Location>((resolve, reject) => {
-    let request = new XMLHttpRequest();
-    request.addEventListener('load', (evt: ProgressEvent) => {
-      try {
-        let json = JSON.parse(request.responseText);
-        if (json && json.location) {
-          resolve(new Location(json.location.lat, json.location.lng));
-        } else {
-          reject(json);
-        }
-      } catch (e) {
-        reject(e);
-      }
-    });
-    request.addEventListener('error', (evt: ProgressEvent) => {
-      reject(evt);
-    });
-    request.open('GET', 'https://location.services.mozilla.com/v1/geolocate?key=test', true);
-    request.send();
-  });
+  const json = await fetchJson<any>('https://location.services.mozilla.com/v1/geolocate?key=test');
+  if (json.location) {
+    return new Location(json.location.lat, json.location.lng);
+  } else {
+    throw new Error('invalid location json: ' + JSON.stringify(json));
+  }
 }
 
 async function findLocationWithBrowser() {

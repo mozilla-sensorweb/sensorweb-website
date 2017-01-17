@@ -14,7 +14,8 @@ html {
   margin: 0;
   padding: 0;
   font-size: inherit;
-  font-weight: inherit;
+	font-weight: inherit;
+	font-style: normal;
 }
 
 html {

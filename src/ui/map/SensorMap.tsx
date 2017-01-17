@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { when, ObservableMap } from 'mobx';
+import { when, autorun, ObservableMap } from 'mobx';
 import { observer } from 'mobx-react';
 import { renderOnResize, ResizeState } from '../renderOnResize';
 
@@ -49,9 +49,14 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   componentDidMount() {
+    // XXX cancel!
     let cancel = when(() => leafletLoader.loaded, () => {
       this.loadMap();
+      autorun(() => {
+        this.renderMarkerLayer();
+      });
     });
+
   }
 
   componentWillUnmount() {
@@ -132,8 +137,8 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
       this.map.addControl(L.control.zoom({ position: 'bottomright' }));
     }
 
-    this.map.addLayer(L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+    this.map.addLayer(L.tileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {//'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Tiles by Carto, CC-BY-3.0. Map data © <a href="http://openstreetmap.org">OpenStreetMap</a>'
     }));
 
 
