@@ -24,13 +24,12 @@ const { default: styled, ThemeProvider } = require<any>('styled-components');
 
 import { IntlProvider } from 'react-intl';
 import { observable } from 'mobx';
-
+import { SensorNameAndQualitySummary } from './ui/SensorListItem';
+import TransitionGroup from 'react-addons-transition-group';
 
 const DrawerFavoriteListItem = styled.li`
   list-style: none;
-  & .name {
-    font-weight: bold;
-  }
+  cursor: pointer;
 `;
 
 @renderOnResize
@@ -53,7 +52,7 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
     };
 
     const drawerContents = <div>
-      <h1 style={{marginLeft: '27px', marginTop: '-7px'}}>Favorites</h1>
+      <h1 style={{marginLeft: '27px', marginTop: '-7px', marginBottom: '1rem'}}>Favorites</h1>
       <ul>
         {appState.settings.favoriteSensors.map((fav) => {
           const sensor = appState.knownSensors.get(fav.sensorId);
@@ -61,9 +60,12 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
             return null;
           }
           return (
-            <DrawerFavoriteListItem>
-              <div className="name">{fav.name}</div>
-              <div className="id">{sensor.currentPm}</div>
+            <DrawerFavoriteListItem
+                onClick={() => {
+                  appState.viewSensor(sensor, true);
+                  this.drawerOpened = false;
+                }}>
+              <SensorNameAndQualitySummary sensor={sensor} name={fav.name}/>
             </DrawerFavoriteListItem>
           );
         }).filter(el => !!el)}
@@ -94,13 +96,16 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
                     selectedSensor={appState.selectedSensor}
                     onMapLoaded={appState.onMapLoaded.bind(appState)}
                     onClickSensor={this.onClickSensor} />
+                  <TransitionGroup>
                   {appState.selectedSensor &&
                     <SensorListItem
                       onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
                       onClickDetails={this.onClickDetails}
                       onClickFavorite={() => appState.isFavoritingSensor = true }
                       expanded={this.expanded}
-                      sensor={appState.selectedSensor} />}
+                      settings={appState.settings}
+                    sensor={appState.selectedSensor} />}
+                  </TransitionGroup>
                 </SensorAndMapList>
                 {appState.viewingSensorDetails &&
                   <SensorDetailsPanel

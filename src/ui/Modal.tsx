@@ -33,9 +33,9 @@ export default class Modal extends React.Component<ModalProps, any> {
   render() {
     return (
       <ModalDivWrapper innerRef={(el: any) => this.backdrop = el} onClick={this.beginClose}>
-        <ModalDiv innerRef={(el: any) => this.el = el}>
-          <div onClick={this.beginClose} style={{display: 'flex'}}>
-            <img className="close-button" src={require<string>('../assets/close-icon.svg')} />
+        <ModalDiv innerRef={(el: any) => this.el = el} onClick={(e: any) => e.stopPropagation() }>
+          <div style={{display: 'flex'}}>
+            <img  onClick={this.beginClose} className="close-button" src={require<string>('../assets/close-icon.svg')} />
             <h1 style={{flexGrow: 1, alignSelf: 'center'}}>{this.props.title}</h1>
           </div>
           {this.props.children}
@@ -53,7 +53,7 @@ const ModalDivWrapper = styled.div`
   left: 0;
 
   display: flex;
-  z-index: 10001;
+  z-index: 11001;
   background: rgba(0, 0, 0, 0.4);
   opacity: 0;
 

@@ -152,7 +152,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
     this.addGpsControl();
 
-    let centerChangedHandler = _.debounce(this.onMapCenterChanged.bind(this), 500);
+    let centerChangedHandler = _.debounce(this.onMapCenterChanged.bind(this), 300);
     //this.disposers.push(centerChangedHandler);
     this.map.on('move', centerChangedHandler);
     this.map.on('click', this.onClick);
@@ -191,6 +191,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   onGps = () => {
+    this.gpsControl.classList.add('following');
     this.props.currentGpsLocation && this.selectLocation(this.props.currentGpsLocation);
   }
 
@@ -207,7 +208,10 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
         this.gpsControl.classList.add('gps-control');
         controlText.src = require<string>('../../assets/gps-pointer.svg');
         this.gpsControl.appendChild(controlText);
-        this.gpsControl.onclick = () => { map.fire('gps'); };
+        this.gpsControl.onclick = (e) => {
+          e.stopPropagation();
+          map.fire('gps');
+        };
         return this.gpsControl;
       }
     }))();
@@ -238,5 +242,6 @@ injectGlobal`
       opacity: 1;
     }
   }
+
 `;
 

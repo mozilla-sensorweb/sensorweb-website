@@ -43,8 +43,11 @@ export class AppState {
     // }
   }
 
-  @action viewSensor(sensor?: Sensor) {
+  @action viewSensor(sensor?: Sensor, pan = false) {
     this.selectedSensor = sensor || undefined; // we explicitly allow undefined
+    if (sensor && this.map && pan) {
+      this.map.panTo(sensor.location.toGoogle());
+    }
   }
 
   @action viewSensorDetails(sensor: Sensor) {

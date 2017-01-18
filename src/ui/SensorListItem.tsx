@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Sensor } from '../state';
 import { pmToColor } from '../ui/colorScale';
-const { default: styled } = require<any>('styled-components');
+const { default: styled, injectGlobal } = require<any>('styled-components');
 import { observer, inject } from 'mobx-react';
 import { FormattedMessage } from 'react-intl';
 import Settings from '../state/Settings';
@@ -15,6 +15,7 @@ interface SensorListItemProps {
   onClickDetails: any;
   onClickFavorite: any;
   expanded: boolean;
+  settings: Settings;
 }
 
 
@@ -32,7 +33,7 @@ const FormattedTemperature = inject('settings')(observer((props: { value: any, s
  * A row in a list showing the details for a given sensor in brief.
  */
 
-const SensorNameAndQualitySummary = styled(({ sensor }: any) => {
+export const SensorNameAndQualitySummary = styled(({ className, sensor, name }: any) => {
   const color = pmToColor(sensor.currentPm, 'light');
 
   let faceIcon;
@@ -49,12 +50,12 @@ const SensorNameAndQualitySummary = styled(({ sensor }: any) => {
   }
 
   return (
-    <div style={{display: 'flex'}}>
+    <div className={className} style={{display: 'flex'}}>
       <img className="icon"
         src={faceIcon}
         style={{ backgroundColor: color, borderRadius: '5px' }} />
       <div>
-        <div className="sensorName">A Sensor</div>
+        <div className="sensorName">{name || 'Sensor'}</div>
         <div className="qualityText" style={{color: color}}>{qualityText}</div>
       </div>
     </div>
@@ -68,6 +69,12 @@ const SensorNameAndQualitySummary = styled(({ sensor }: any) => {
 
   & .qualityText {
     text-transform: uppercase;
+  }
+
+  & .icon {
+    width: 3rem;
+    height: 3rem;
+    margin-right: 0.5rem;
   }
 `;
 
@@ -86,16 +93,31 @@ const weatherIcons = {
   'partly-cloudy-night': require<string>('../assets/weather-icons/partly-cloudy-night.svg'),
 };
 
-@inject('settings')
 @observer
-export default class SensorListItem extends React.Component<SensorListItemProps & { settings?: Settings }, any> {
+export default class SensorListItem extends React.Component<SensorListItemProps, any> {
   @observable weatherJson?: any;
+  el: HTMLElement;
 
   async componentDidMount() {
     const { latitude, longitude } = this.props.sensor.location;
     //const url = `https://api.darksky.net/forecast/ef9d0582dae0cc7e34783d8b70f37dfb/${latitude},${longitude}`;
     const url = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=172c63f7cadd6363539161affd0513d8&callback=?`;
     this.weatherJson = (await fetchJsonP<any>(url));
+  }
+
+  componentWillEnter(cb: any) {
+    setTimeout(() => {
+      this.el.classList.add('active');
+      // Allow us to move the map attribution. :(
+      document.body.classList.add('SensorListItem-active');
+      cb();
+    });
+  }
+
+  componentWillLeave(cb: any) {
+    this.el.classList.remove('active');
+    document.body.classList.remove('SensorListItem-active');
+    setTimeout(cb, 500);
   }
 
   render() {
@@ -121,7 +143,7 @@ export default class SensorListItem extends React.Component<SensorListItemProps 
       summary = this.weatherJson.weather[0].summary;
     }
 
-    return <SensorListItemDiv onClick={this.props.onClickExpand}>
+    return <SensorListItemDiv innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
       <div className="row">
         <SensorNameAndQualitySummary sensor={sensor} />
         <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
@@ -139,9 +161,10 @@ export default class SensorListItem extends React.Component<SensorListItemProps 
           </div>
         </div>
       </div>
-      {this.props.expanded && <div className="row" style={{marginTop: '0.5rem'}}>
+      {this.props.expanded && <div className="row">
         <img className="ss-icon" src={require<string>('../assets/share-icon.svg')} />
-        <img className={'ss-icon' + (isFavorited ? ' favorited' : '')} src={require<string>('../assets/star-icon.svg')}
+        <img className={'ss-icon' + (isFavorited ? ' favorited' : '')}
+          src={isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')}
           onClick={() => {
             if (isFavorited) {
               this.props.settings!.unfavoriteSensor(sensor);
@@ -156,15 +179,36 @@ export default class SensorListItem extends React.Component<SensorListItemProps 
   }
 }
 
+
+injectGlobal`
+.leaflet-bottom {
+  transition: bottom 200ms ease-out;
+}
+.SensorListItem-active .leaflet-bottom {
+  bottom: 7rem;
+}
+`;
+
 const SensorListItemDiv = styled.div`
-  background: white;
+  background: rgba(255, 255, 255, 0.8);
   color: black;
   padding: 0.5rem;
+  padding-bottom: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 7rem;
+  z-index: 500;
+  transform: translateY(100%);
+  transition: transform 200ms ease-out;
+
+  &.active {
+    transform: translateY(0);
+  }
 
   display: flex;
   flex-direction: column;
-
-  transition: all 1s ease;
 
   & .sensorName {
     font-size: 1.3rem;
@@ -187,14 +231,8 @@ const SensorListItemDiv = styled.div`
     opacity: 0.6;
   }
 
-  & .icon {
-    width: 3rem;
-    height: 3rem;
-    margin-right: 0.5rem;
-  }
-
   & .favorited {
-    background: goldenrod;
+
   }
 
   & .ss-icon {
