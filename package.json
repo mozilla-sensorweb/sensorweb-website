@@ -49,6 +49,7 @@
     "@types/react-intl": "^2.2.1",
     "@types/react-motion": "0.0.20",
     "@types/tween.js": "0.0.31",
+    "awesome-typescript-loader": "^3.0.0-beta.18",
     "babel-core": "^6.21.0",
     "babel-loader": "^6.2.5",
     "babel-plugin-transform-async-to-generator": "^6.8.0",

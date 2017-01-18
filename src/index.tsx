@@ -10,27 +10,24 @@ import { observer, Provider } from 'mobx-react';
 import SensorMap from './ui/map/SensorMap';
 import STClient from './sensorthings';
 import PageHeader from './ui/PageHeader';
-import SensorDetailsPanel from './ui/SensorDetailsPanel';
+import FavoritesPane from './ui/FavoritesPane';
+import MapPane from './ui/MapPane';
+import SearchPane from './ui/SearchPane';
 import MobileHeader from './ui/MobileHeader';
 import SensorListItem from './ui/SensorListItem';
-import Drawer from './ui/Drawer';
+import TabbedInterface from './ui/TabbedInterface';
 import SettingsModal from './ui/SettingsModal';
 import FavoriteModal from './ui/FavoriteModal';
 
 import { renderOnResize, ResizeState } from './ui/renderOnResize';
-import { AppState, Sensor, Location } from './state';
+import { AppState, Sensor, Location, Tabs } from './state';
 
 const { default: styled, ThemeProvider } = require<any>('styled-components');
 
 import { IntlProvider } from 'react-intl';
 import { observable } from 'mobx';
-import { SensorNameAndQualitySummary } from './ui/SensorListItem';
 import TransitionGroup from 'react-addons-transition-group';
 
-const DrawerFavoriteListItem = styled.li`
-  list-style: none;
-  cursor: pointer;
-`;
 
 @renderOnResize
 @observer
@@ -51,81 +48,30 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
       isMobile
     };
 
-    const drawerContents = <div>
-      <h1 style={{marginLeft: '27px', marginTop: '-7px', marginBottom: '1rem'}}>Favorites</h1>
-      <ul>
-        {appState.settings.favoriteSensors.map((fav) => {
-          const sensor = appState.knownSensors.get(fav.sensorId);
-          if (!sensor) {
-            return null;
-          }
-          return (
-            <DrawerFavoriteListItem
-                onClick={() => {
-                  appState.viewSensor(sensor, true);
-                  this.drawerOpened = false;
-                }}>
-              <SensorNameAndQualitySummary sensor={sensor} name={fav.name}/>
-            </DrawerFavoriteListItem>
-          );
-        }).filter(el => !!el)}
-      </ul>
-    </div>;
     return (
       <Provider settings={appState.settings}>
         <IntlProvider locale={navigator.language}>
           <ThemeProvider theme={theme}>
-            <Drawer open={this.drawerOpened} onClose={this.onCloseDrawer}
-              contents={drawerContents}>
-              <RootDiv>
-                {this.settingsOpened && <SettingsModal settings={appState.settings} onClose={this.onCloseSettings} />}
-                {appState.isFavoritingSensor && appState.selectedSensor &&
-                  <FavoriteModal settings={appState.settings} sensor={appState.selectedSensor} onClose={() => appState.isFavoritingSensor = false } />}
-                {/*!isMobile && <PageHeader />*/}
-                <MobileHeader
-                  searching={appState.isSearchingForLocation}
-                  onToggleDrawer={this.onToggleDrawer}
-                  drawerOpened={this.drawerOpened}
-                  onOpenSettings={this.onClickSettings}
-                  onSearch={appState.searchForLocation.bind(appState)} />
-                <SensorAndMapList>
-                  <SensorMap
-                    style={{width: '100%', flexGrow: 1}}
-                    currentGpsLocation={appState.currentGpsLocation}
-                    knownSensors={appState.knownSensors}
-                    selectedSensor={appState.selectedSensor}
-                    onMapLoaded={appState.onMapLoaded.bind(appState)}
-                    onClickSensor={this.onClickSensor} />
-                  <TransitionGroup>
-                  {appState.selectedSensor &&
-                    <SensorListItem
-                      onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
-                      onClickDetails={this.onClickDetails}
-                      onClickFavorite={() => appState.isFavoritingSensor = true }
-                      expanded={this.expanded}
-                      settings={appState.settings}
-                    sensor={appState.selectedSensor} />}
-                  </TransitionGroup>
-                </SensorAndMapList>
-                {appState.viewingSensorDetails &&
-                  <SensorDetailsPanel
-                    onClose={() => appState.stopViewingSensorDetails()}
-                    currentLocation={appState.currentGpsLocation}
-                    sensor={appState.selectedSensor!} />}
-              </RootDiv>
-            </Drawer>
+            <RootDiv>
+              {this.settingsOpened && <SettingsModal settings={appState.settings} onClose={this.onCloseSettings} />}
+              {appState.isFavoritingSensor && appState.selectedSensor &&
+                <FavoriteModal settings={appState.settings} sensor={appState.selectedSensor} onClose={() => appState.isFavoritingSensor = false } />}
+              {/*!isMobile && <PageHeader />*/}
+                <TabbedInterface
+                  selectedTab={appState.currentTab}
+                  onSelectedTab={(index) => appState.currentTab = index}
+                  labels={['Favorites', 'Map', 'Search']}>
+                  <FavoritesPane appState={appState} />
+                  <MapPane appState={appState} />
+                  <SearchPane appState={appState}
+                    searching={appState.isSearchingForLocation}
+                    onSearch={appState.searchForLocation.bind(appState)} />
+                </TabbedInterface>
+            </RootDiv>
           </ThemeProvider>
         </IntlProvider>
       </Provider>
     );
-  }
-
-  onCloseDrawer = () => {
-    this.drawerOpened = false;
-  }
-
-  onToggleDrawer = () => {
-    this.drawerOpened = !this.drawerOpened;
   }
 
   onClickSettings = () => {
@@ -135,24 +81,8 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
   onCloseSettings = () => {
     this.settingsOpened = false;
   }
-
-  onClickSensor = (sensor?: Sensor) => {
-    this.props.appState.viewSensor(sensor);
-  };
-
-  onClickDetails = () => {
-    const sensor = this.props.appState.selectedSensor!;
-    this.props.appState.viewSensorDetails(sensor);
-  };
 }
 
-
-const SensorAndMapList = styled.div`
-  flex: 1;
-
-  display: flex;
-  flex-direction: column;
-`;
 
 const RootDiv = styled.div`
   display: flex;

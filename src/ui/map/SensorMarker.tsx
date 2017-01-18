@@ -14,7 +14,6 @@ const { default: styled, keyframes } = require<any>('styled-components');
 
 interface SensorMarkerProps {
   sensor: Sensor;
-  onClick: (sensor: Sensor) => void;
   selected: boolean;
 }
 
@@ -37,8 +36,7 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
     shadowColor.opacity = 0.6;
 
     return <SensorMarkerStyledDiv
-      style={{ zIndex: this.props.selected ? 1 : 0 }}
-      onClick={(e: any) => this.props.onClick(this.props.sensor)}>
+      style={{ zIndex: this.props.selected ? 1 : 0 }}>
       <MarkerShadow
         selected={this.props.selected}
         style={{backgroundColor: shadowColor}} />

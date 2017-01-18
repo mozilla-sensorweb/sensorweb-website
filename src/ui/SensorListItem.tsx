@@ -14,7 +14,6 @@ interface SensorListItemProps {
   onClickExpand: any;
   onClickDetails: any;
   onClickFavorite: any;
-  expanded: boolean;
   settings: Settings;
 }
 
@@ -33,7 +32,7 @@ const FormattedTemperature = inject('settings')(observer((props: { value: any, s
  * A row in a list showing the details for a given sensor in brief.
  */
 
-export const SensorNameAndQualitySummary = styled(({ className, sensor, name }: any) => {
+export const SensorRowSummary = styled(({ className, sensor, name }: any) => {
   const color = pmToColor(sensor.currentPm, 'light');
 
   let faceIcon;
@@ -49,8 +48,26 @@ export const SensorNameAndQualitySummary = styled(({ className, sensor, name }: 
     qualityText = 'Bad Air Quality';
   }
 
+  let temp = sensor.currentTemperature;
+  let humidity = sensor.currentHumidity;
+  let iconUrl = weatherIcons['unknown'];
+  let summary = 'unknown';
+  if (this.weatherJson && this.weatherJson.weather && this.weatherJson.weather[0]) {
+    iconUrl = `http://openweathermap.org/img/w/${this.weatherJson.weather[0].icon}.png`;
+    // if ((weatherIcons as any)[this.weatherJson.weather[0].icon]) {
+    //   iconUrl = (weatherIcons as any)[this.weatherJson.weather[0].icon];
+    // }
+    if (!temp) {
+      temp = this.weatherJson.main.temp - 273.15;
+    }
+    if (!humidity) {
+      humidity = this.weatherJson.main.humidity;
+    }
+    summary = this.weatherJson.weather[0].summary;
+  }
+
   return (
-    <div className={className} style={{display: 'flex'}}>
+    <div className={className}>
       <img className="icon"
         src={faceIcon}
         style={{ backgroundColor: color, borderRadius: '5px' }} />
@@ -58,10 +75,25 @@ export const SensorNameAndQualitySummary = styled(({ className, sensor, name }: 
         <div className="sensorName">{name || 'Sensor'}</div>
         <div className="qualityText" style={{color: color}}>{qualityText}</div>
       </div>
+      <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
+        <img
+          src={iconUrl}
+          alt={summary}
+          title={summary}
+          style={{width: '3rem', height: '3rem'}} />
+        <div>
+          <div className="temp"><FormattedTemperature value={temp} /></div>
+          <div style={{whiteSpace: 'nowrap'}}>
+            <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
+            {humidity && humidity.toFixed() || '--'}<span className="unit">%</span>
+            </div>
+        </div>
+      </div>
     </div>
   );
 })`
   display: flex;
+  flex-grow: 1;
 
   & .sensorName {
     font-size: 1.3rem;
@@ -105,63 +137,15 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
     this.weatherJson = (await fetchJsonP<any>(url));
   }
 
-  componentWillEnter(cb: any) {
-    setTimeout(() => {
-      this.el.classList.add('active');
-      // Allow us to move the map attribution. :(
-      document.body.classList.add('SensorListItem-active');
-      cb();
-    });
-  }
-
-  componentWillLeave(cb: any) {
-    this.el.classList.remove('active');
-    document.body.classList.remove('SensorListItem-active');
-    setTimeout(cb, 500);
-  }
-
   render() {
     const sensor = this.props.sensor;
-    const color = pmToColor(sensor.currentPm, 'light');
-    let temp = sensor.currentTemperature;
-    let humidity = sensor.currentHumidity;
     const isFavorited = this.props.settings!.isFavoriteSensor(sensor);
-
-    let iconUrl = weatherIcons['unknown'];
-    let summary = 'unknown';
-    if (this.weatherJson && this.weatherJson.weather && this.weatherJson.weather[0]) {
-      iconUrl = `http://openweathermap.org/img/w/${this.weatherJson.weather[0].icon}.png`;
-      // if ((weatherIcons as any)[this.weatherJson.weather[0].icon]) {
-      //   iconUrl = (weatherIcons as any)[this.weatherJson.weather[0].icon];
-      // }
-      if (!temp) {
-        temp = this.weatherJson.main.temp - 273.15;
-      }
-      if (!humidity) {
-        humidity = this.weatherJson.main.humidity;
-      }
-      summary = this.weatherJson.weather[0].summary;
-    }
 
     return <SensorListItemDiv innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
       <div className="row">
-        <SensorNameAndQualitySummary sensor={sensor} />
-        <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
-          <img
-            src={iconUrl}
-            alt={summary}
-            title={summary}
-            style={{width: '3rem', height: '3rem'}} />
-          <div>
-            <div className="temp"><FormattedTemperature value={temp} /></div>
-            <div style={{whiteSpace: 'nowrap'}}>
-              <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
-              {humidity && humidity.toFixed() || '--'}<span className="unit">%</span>
-              </div>
-          </div>
-        </div>
+        <SensorRowSummary sensor={sensor} />
       </div>
-      {this.props.expanded && <div className="row">
+      <div className="row">
         <img className="ss-icon" src={require<string>('../assets/share-icon.svg')} />
         <img className={'ss-icon' + (isFavorited ? ' favorited' : '')}
           src={isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')}
@@ -174,20 +158,10 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
           }} />
         <a className="details-link" style={{marginLeft: 'auto'}}
           onClick={this.props.onClickDetails}>Sensor Details ></a>
-      </div>}
+      </div>
     </SensorListItemDiv>;
   }
 }
-
-
-injectGlobal`
-.leaflet-bottom {
-  transition: bottom 200ms ease-out;
-}
-.SensorListItem-active .leaflet-bottom {
-  bottom: 7rem;
-}
-`;
 
 const SensorListItemDiv = styled.div`
   background: rgba(255, 255, 255, 0.8);
@@ -200,12 +174,6 @@ const SensorListItemDiv = styled.div`
   right: 0;
   height: 7rem;
   z-index: 500;
-  transform: translateY(100%);
-  transition: transform 200ms ease-out;
-
-  &.active {
-    transform: translateY(0);
-  }
 
   display: flex;
   flex-direction: column;

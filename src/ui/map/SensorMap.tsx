@@ -52,9 +52,9 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
     // XXX cancel!
     let cancel = when(() => leafletLoader.loaded, () => {
       this.loadMap();
-      autorun(() => {
-        this.renderMarkerLayer();
-      });
+      // autorun(() => {
+      //   this.renderMarkerLayer();
+      // });
     });
 
   }
@@ -85,6 +85,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   renderMarkerLayer() {
+    console.log('renderMarkerLayer', new Error().stack);
     if (!this.map) {
       return;
     }
@@ -110,15 +111,11 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
         this.sensorsToMarkers.set(sensor, marker);
       }
       const isSelected = (sensor === this.props.selectedSensor);
-      marker.setZIndexOffset(isSelected ? 10000 : 0);
       ReactDOM.render(
         <SensorMarker
-          key={sensor.id}
           sensor={sensor}
           selected={isSelected}
-          onClick={this.props.onClickSensor}
           />, marker.getElement());
-
     });
   }
 

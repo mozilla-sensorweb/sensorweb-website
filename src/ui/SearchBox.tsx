@@ -43,7 +43,6 @@ export default class SearchBox extends React.Component<SearchBoxProps, {}> {
 
 const SearchBoxDiv = styled.div`
   width: 100%;
-  flex-grow: 1;
   display: flex;
 
   & input {

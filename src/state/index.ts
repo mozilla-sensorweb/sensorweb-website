@@ -24,6 +24,12 @@ function geolocate(address: string) {
   });
 }
 
+export enum Tabs {
+  Favorites,
+  Map,
+  Search
+};
+
 export class AppState {
   @observable currentGpsLocation?: Location;
   @observable selectedSensor?: Sensor;
@@ -31,6 +37,7 @@ export class AppState {
   @observable viewingSensorDetails = false;
   @observable isSearchingForLocation = false;
   @observable isFavoritingSensor = false;
+  @observable currentTab = Tabs.Favorites;
   settings = new Settings();
 
   map?: L.Map;
@@ -48,6 +55,7 @@ export class AppState {
     if (sensor && this.map && pan) {
       this.map.panTo(sensor.location.toGoogle());
     }
+    this.currentTab = Tabs.Map;
   }
 
   @action viewSensorDetails(sensor: Sensor) {
@@ -60,7 +68,6 @@ export class AppState {
   @action onMapLoaded(map: L.Map) {
     this.map = map;
   }
-
 
   @action async searchForLocation(address: string) {
     if (!this.map) {
