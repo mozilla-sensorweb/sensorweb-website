@@ -86,7 +86,9 @@ const TabButton = styled.div`
   display: flex;
 
   & span {
-    text-indent: -1000px;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
     width: 3rem;
     height: 3rem;
     margin: auto;

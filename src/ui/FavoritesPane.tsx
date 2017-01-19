@@ -11,6 +11,10 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
   render() {
     const appState = this.props.appState;
     return <Wrapper>
+      <img
+        className="settings"
+        onClick={() => appState.showingSettingsPanel = true }
+        src={require<string>('../assets/settings-icon.svg')} />
       <h1>Favorites</h1>
       <ul>
         {appState.settings.favoriteSensors.map((fav) => {
@@ -36,11 +40,22 @@ const Wrapper = styled.div`
   color: black;
   background: #eee;
 
+  & .settings {
+    width: 3rem;
+    height: 3rem;
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    z-index: 1;
+  }
+
   & h1 {
     font-size: 1.5rem;
     background: #fff;
     text-align: center;
-    padding: 1rem;
+
+    height: 4rem;
+    line-height: 4rem;
 
     /* all for the shadow */
     position: relative;

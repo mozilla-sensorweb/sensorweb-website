@@ -33,7 +33,6 @@ import TransitionGroup from 'react-addons-transition-group';
 class Root extends React.Component<{ appState: AppState }, ResizeState> {
   @observable expanded = true;
   @observable drawerOpened = false;
-  @observable settingsOpened = false;
 
   constructor(props: any) {
     super(props);
@@ -52,7 +51,7 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
         <IntlProvider locale={navigator.language}>
           <ThemeProvider theme={theme}>
             <RootDiv>
-              {this.settingsOpened && <SettingsModal settings={appState.settings} onClose={this.onCloseSettings} />}
+              {appState.showingSettingsPanel && <SettingsModal settings={appState.settings} onClose={this.onCloseSettings} />}
               {appState.isFavoritingSensor && appState.selectedSensor &&
                 <FavoriteModal settings={appState.settings} sensor={appState.selectedSensor} onClose={() => appState.isFavoritingSensor = false } />}
               {/*!isMobile && <PageHeader />*/}
@@ -71,12 +70,8 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
     );
   }
 
-  onClickSettings = () => {
-    this.settingsOpened = true;
-  }
-
   onCloseSettings = () => {
-    this.settingsOpened = false;
+    appState.showingSettingsPanel = false;
   }
 }
 

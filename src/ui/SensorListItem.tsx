@@ -75,7 +75,7 @@ export const SensorRowSummary = styled(({ className, sensor, name }: any) => {
         <div className="sensorName">{name || 'Sensor'}</div>
         <div className="qualityText" style={{color: color}}>{qualityText}</div>
       </div>
-      <div style={{marginLeft: 'auto', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
+      <div style={{marginLeft: 'auto', flexBasis: '7rem', display: 'flex', alignItems: 'center', borderLeft: '1px solid #ddd', paddingLeft: '0.5rem' }}>
         <img
           src={iconUrl}
           alt={summary}
