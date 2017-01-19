@@ -43,7 +43,6 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   render() {
     return (
       <StyledMap innerRef={(el: any) => this.el = el}>
-        {/*<ColorIndexOverlay />*/}
       </StyledMap>
     );
   }
@@ -131,7 +130,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
     } as L.MapOptions);
 
     if (!isMobile) {
-      this.map.addControl(L.control.zoom({ position: 'bottomright' }));
+      this.map.addControl(L.control.zoom({ position: 'topright' }));
     }
 
     this.map.addLayer(L.tileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {//'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -197,12 +196,13 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
     const control: L.Control = new (L.Control.extend({
       options: {
-        position: 'bottomright'
+        position: 'topright'
       },
 
       onAdd: (map: L.Map) => {
         let controlText = document.createElement('img');
         this.gpsControl.classList.add('gps-control');
+        this.gpsControl.classList.add('leaflet-bar');
         controlText.src = require<string>('../../assets/gps-pointer.svg');
         this.gpsControl.appendChild(controlText);
         this.gpsControl.onclick = (e) => {
@@ -217,6 +217,14 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 }
 
 injectGlobal`
+  .leaflet-top {
+    top: 3.1rem !important;
+  }
+
+  .leaflet-bar a {
+    line-height: 26px !important; /* who knows */
+  }
+
   .gps-control {
     background-color: #fff;
     box-shadow: 0px 1px 4px -1px rgba(0, 0, 0, 0.3);
@@ -226,9 +234,9 @@ injectGlobal`
     margin-top: 10px;
     margin-right: 10px;
     & img {
-      width: 28px;
+      width: 30px;
       height: 25px;
-      padding: 7px 8px 2px 6px;
+      padding: 7px 7px 2px 6px;
       opacity: 0.55;
     }
   }

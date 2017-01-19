@@ -13,7 +13,6 @@ import PageHeader from './ui/PageHeader';
 import FavoritesPane from './ui/FavoritesPane';
 import MapPane from './ui/MapPane';
 import SearchPane from './ui/SearchPane';
-import MobileHeader from './ui/MobileHeader';
 import SensorListItem from './ui/SensorListItem';
 import TabbedInterface from './ui/TabbedInterface';
 import SettingsModal from './ui/SettingsModal';
@@ -63,9 +62,7 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
                   labels={['Favorites', 'Map', 'Search']}>
                   <FavoritesPane appState={appState} />
                   <MapPane appState={appState} />
-                  <SearchPane appState={appState}
-                    searching={appState.isSearchingForLocation}
-                    onSearch={appState.searchForLocation.bind(appState)} />
+                  <SearchPane appState={appState} />
                 </TabbedInterface>
             </RootDiv>
           </ThemeProvider>

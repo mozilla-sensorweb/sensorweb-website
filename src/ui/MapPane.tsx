@@ -5,6 +5,7 @@ import TransitionGroup from 'react-addons-transition-group';
 import SensorListItem from './SensorListItem';
 import { AppState, Sensor } from '../state';
 import { observer } from 'mobx-react';
+import ColorIndexOverlay from './map/ColorIndexOverlay';
 
 interface MapPaneProps {
   appState: AppState;
@@ -15,6 +16,7 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
   render() {
     const appState = this.props.appState;
     return <Wrapper>
+      <ColorIndexOverlay />
       <SensorMap
         style={{width: '100%', flexGrow: 1}}
         currentGpsLocation={appState.currentGpsLocation}
@@ -47,6 +49,7 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
 
 const Wrapper = styled.div`
   flex: 1;
+  position: relative;
 
   display: flex;
   flex-direction: column;

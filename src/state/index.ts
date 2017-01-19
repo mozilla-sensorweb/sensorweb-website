@@ -6,23 +6,6 @@ export { default as Location } from './Location';
 export { default as Sensor, SensorReading } from './Sensor';
 import Settings from './Settings';
 
-function geolocate(address: string) {
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.addEventListener('load', (evt: ProgressEvent) => {
-      try {
-        resolve(JSON.parse(request.responseText));
-      } catch (e) {
-        reject(e);
-      }
-    });
-    request.addEventListener('error', (evt: ProgressEvent) => {
-      reject(evt);
-    });
-    request.open('GET', `http://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(address)}`, true);
-    request.send();
-  });
-}
 
 export enum Tabs {
   Favorites,
@@ -35,7 +18,6 @@ export class AppState {
   @observable selectedSensor?: Sensor;
   @observable knownSensors = new ObservableMap<Sensor>();
   @observable viewingSensorDetails = false;
-  @observable isSearchingForLocation = false;
   @observable isFavoritingSensor = false;
   @observable currentTab = Tabs.Favorites;
   settings = new Settings();
@@ -48,6 +30,16 @@ export class AppState {
     // if (this.map) {
     //   this.map.panTo(this.currentGpsLocation.toGoogle());
     // }
+  }
+
+  @action goToLocation(location: Location) {
+    if (!this.map) {
+      console.error('Cannot go to location; map not loaded.');
+      return;
+    }
+    this.map.panTo(location.toGoogle());
+    this.viewSensor(this.closestSensorToLocation(location));
+
   }
 
   @action viewSensor(sensor?: Sensor, pan = false) {
@@ -67,27 +59,6 @@ export class AppState {
 
   @action onMapLoaded(map: L.Map) {
     this.map = map;
-  }
-
-  @action async searchForLocation(address: string) {
-    if (!this.map) {
-      return; // XXX: we need to wait for map to load and retry
-    }
-    this.isSearchingForLocation = true;
-    try {
-      const results: any = await geolocate(address);
-      console.log('geo', results);
-      if (results[0]) {
-        let loc = new Location(parseFloat(results[0].lat), parseFloat(results[0].lon));
-        this.map!.panTo(loc.toGoogle());
-        this.viewSensor(this.closestSensorToLocation(loc));
-      }
-    } catch(e) {
-      console.error(e);
-      return;
-    } finally {
-      this.isSearchingForLocation = false;
-    }
   }
 
   closestSensorToLocation(location: Location) {

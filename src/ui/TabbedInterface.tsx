@@ -26,7 +26,11 @@ export default class TabbedInterface extends React.Component<TabbedInterfaceProp
           {this.props.labels.map((label, index) => (
             <TabButton
               isCurrent={currentPaneIndex === index}
-              onClick={() => this.props.onSelectedTab(index)}>{label}</TabButton>
+              onClick={() => this.props.onSelectedTab(index)}>
+                <span style={{
+                  backgroundPositionX: (index * -100) + '%',
+                  backgroundPositionY: (currentPaneIndex === index ? -100 : 0) + '%',
+                }}>{label}</span></TabButton>
           ))}
         </Buttons>
       </Wrapper>
@@ -50,7 +54,13 @@ const Buttons = styled.div`
   flex-shrink: 0;
 
   display: flex;
-  height: 5rem;
+  height: 4rem;
+  box-shadow: 0 0px 30px rgba(0, 0, 0, 0.3);
+  padding-left: 20px;
+  padding-right: 20px;
+  margin-left: -20px;
+  margin-right: -20px;
+  z-index: 1;
 `;
 
 const Pane = styled.div`
@@ -68,9 +78,21 @@ const TabButton = styled.div`
   border-right: 1px solid #ccc;
   &:last-child { border-right: 0 none; }
 
-  line-height: 5rem;
+  line-height: 4rem;
   text-align: center;
   flex-basis: 0;
+
+
+  display: flex;
+
+  & span {
+    text-indent: -1000px;
+    width: 3rem;
+    height: 3rem;
+    margin: auto;
+    background: url('${require<string>('../assets/tab-sprites.svg')}') 0 0;
+    background-size: calc(3 * 100%) calc(2 * 100%);
+  }
 
   ${(props: any) => props.isCurrent ? `
     font-weight: bold;

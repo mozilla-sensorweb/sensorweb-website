@@ -34,17 +34,21 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
 const Wrapper = styled.div`
   flex-grow: 1;
   color: black;
-  background: white;
+  background: #eee;
 
   & h1 {
     font-size: 1.5rem;
-    background: #eee;
+    background: #fff;
     text-align: center;
     padding: 1rem;
-  }
 
-  & > ul {
-    padding: 1rem;
+    /* all for the shadow */
+    position: relative;
+    margin-left: -1rem;
+    padding-left: 2rem;
+    margin-right: -1rem;
+    padding-right: 2rem;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
   }
 `;
 
@@ -53,4 +57,6 @@ const FavoriteListItem = styled.li`
   list-style: none;
   cursor: pointer;
   padding: 1rem;
+  border-bottom: 1px solid #ccc;
+  background: white;
 `;
