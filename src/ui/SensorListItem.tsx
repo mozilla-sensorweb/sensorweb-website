@@ -8,9 +8,10 @@ import { FormattedMessage } from 'react-intl';
 import Settings from '../state/Settings';
 import { fetchJson, fetchJsonP } from '../utils';
 import { observable } from 'mobx';
+import { Motion, spring } from 'react-motion';
 
 interface SensorListItemProps {
-  sensor: Sensor;
+  sensor?: Sensor;
   onClickExpand: any;
   onClickDetails: any;
   onClickFavorite: any;
@@ -130,36 +131,139 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
   @observable weatherJson?: any;
   el: HTMLElement;
 
+  @observable isPressed: boolean = false;
+  @observable currentTop: number = 0;
+  @observable startTop: number = 0;
+  @observable snapTop: number = 0;
+  @observable maxTop: number = 0;
+  @observable previousPageY: number = 0;
+  @observable startPageY: number;
+
   async componentDidMount() {
-    const { latitude, longitude } = this.props.sensor.location;
+    this.el.removeEventListener('touchstart', this.onTouchStart);
+    window.addEventListener('touchmove', this.onTouchMove);
+    window.addEventListener('touchend', this.onTouchEnd);
+    this.el.addEventListener('mousedown', this.onMouseDown);
+    window.addEventListener('mousemove', this.onMouseMove);
+    window.addEventListener('mouseup', this.onMouseUp);
+    window.addEventListener('resize', this.onResize);
+    this.onResize();
+    if (this.props.sensor) {
+      this.onNewSensorShown(this.props.sensor);
+    }
+  }
+
+  conponentWillReceiveProps(nextProps: SensorListItemProps) {
+    if (nextProps.sensor) {
+      this.onNewSensorShown(nextProps.sensor);
+    }
+  }
+
+  async onNewSensorShown(sensor: Sensor) {
+    const { latitude, longitude } = sensor.location;
     //const url = `https://api.darksky.net/forecast/ef9d0582dae0cc7e34783d8b70f37dfb/${latitude},${longitude}`;
     const url = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=172c63f7cadd6363539161affd0513d8&callback=?`;
     this.weatherJson = (await fetchJsonP<any>(url));
   }
 
+  componentWillUnmount() {
+    this.el.removeEventListener('touchstart', this.onTouchStart);
+    window.removeEventListener('touchmove', this.onTouchMove);
+    window.removeEventListener('touchend', this.onTouchEnd);
+    this.el.removeEventListener('mousedown', this.onMouseDown as EventListener);
+    window.removeEventListener('mousemove', this.onMouseMove as EventListener);
+    window.removeEventListener('mouseup', this.onMouseUp);
+  }
+
+  onTouchStart = (e: TouchEvent) => {
+    this.onMouseDown(e.touches[0]);
+  }
+
+  onMouseDown = (e: { pageY: number } | MouseEvent) => {
+    this.startPageY = this.previousPageY = e.pageY;
+    this.startTop = this.currentTop = this.el.getBoundingClientRect().top;
+    this.isPressed = true;
+  }
+
+  onTouchEnd = () => {
+    this.onMouseUp();
+  }
+
+  onTouchMove = (e: TouchEvent) => {
+    if (this.isPressed) {
+      e.preventDefault();
+      this.onMouseMove(e.touches[0]);
+    }
+  }
+
+  onResize = () => {
+    if (!window.innerHeight) {
+      return;
+    }
+    const newMax = window.innerHeight - 175;
+    if (!this.maxTop) {
+      this.currentTop = this.snapTop = newMax;
+    }
+    this.maxTop = newMax;
+  }
+
+  onMouseMove = (e: { pageY: number } | MouseEvent) => {
+    if (this.isPressed) {
+      const delta = e.pageY - this.startPageY;
+      const immediateDelta = e.pageY - this.previousPageY;
+      this.previousPageY = e.pageY;
+      this.currentTop = Math.max(0, Math.min(this.maxTop, this.startTop + delta));
+
+      const wasOpen = this.startTop < (this.maxTop / 2);
+      if (Math.abs(delta) < 10 || !immediateDelta) {
+        // If the total delta was very small, toggle it.
+        this.snapTop = wasOpen ? this.maxTop : 0;
+      } else {
+        // Otherwise, take the direction from our immediate velocity.
+        this.snapTop = immediateDelta > 0 ? this.maxTop : 0;
+      }
+    }
+  }
+
+  onMouseUp = () => {
+    if (this.startPageY === this.previousPageY) {
+      // we didn't move, toggle it
+      const wasOpen = this.startTop < (this.maxTop / 2);
+      this.snapTop = wasOpen ? this.maxTop : 0;
+    }
+    this.isPressed = false;
+  }
+
   render() {
     const sensor = this.props.sensor;
-    const isFavorited = this.props.settings!.isFavoriteSensor(sensor);
+    const isFavorited = sensor && this.props.settings!.isFavoriteSensor(sensor);
 
-    return <SensorListItemDiv innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
-      <div className="row">
-        <SensorRowSummary sensor={sensor} />
-      </div>
-      <div className="row">
-        <img className="ss-icon" src={require<string>('../assets/share-icon.svg')} />
-        <img className={'ss-icon' + (isFavorited ? ' favorited' : '')}
-          src={isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')}
-          onClick={() => {
-            if (isFavorited) {
-              this.props.settings!.unfavoriteSensor(sensor);
-            } else {
-              this.props.onClickFavorite(sensor);
-            }
-          }} />
-        <a className="details-link" style={{marginLeft: 'auto'}}
-          onClick={this.props.onClickDetails}>Sensor Details ></a>
-      </div>
-    </SensorListItemDiv>;
+    return (
+      <Motion style={{ y: this.isPressed || !this.maxTop ? this.currentTop : spring(this.snapTop) }}>{({ y }: any) => (
+        <SensorListItemDiv
+          style={{ opacity: this.maxTop && sensor ? 1 : 0, transform: `translateY(${y}px)` }}
+          innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
+          { sensor &&
+          <div className="row">
+            <SensorRowSummary sensor={sensor} />
+          </div> }
+          { sensor && <div className="row">
+            <img className="ss-icon" src={require<string>('../assets/share-icon.svg')} />
+            <img className={'ss-icon' + (isFavorited ? ' favorited' : '')}
+              src={isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')}
+              onClick={() => {
+                if (isFavorited) {
+                  this.props.settings!.unfavoriteSensor(sensor);
+                } else {
+                  this.props.onClickFavorite(sensor);
+                }
+              }} />
+            <a className="details-link" style={{marginLeft: 'auto'}}
+              onClick={this.props.onClickDetails}>Sensor Details ></a>
+          </div> }
+        </SensorListItemDiv>
+      )}</Motion>
+    );
   }
 }
 
@@ -169,11 +273,12 @@ const SensorListItemDiv = styled.div`
   padding: 0.5rem;
   padding-bottom: 0;
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: 7rem;
+  height: 100vh;
   z-index: 500;
+  transition: opacity 200ms ease;
 
   display: flex;
   flex-direction: column;

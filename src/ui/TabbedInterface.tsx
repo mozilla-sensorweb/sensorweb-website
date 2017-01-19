@@ -61,6 +61,9 @@ const Buttons = styled.div`
   margin-left: -20px;
   margin-right: -20px;
   z-index: 1;
+
+  justify-content: center;
+  background: white;
 `;
 
 const Pane = styled.div`
@@ -81,7 +84,7 @@ const TabButton = styled.div`
   line-height: 4rem;
   text-align: center;
   flex-basis: 0;
-
+  max-width: 20rem;
 
   display: flex;
 

@@ -24,15 +24,12 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
         selectedSensor={appState.selectedSensor}
         onMapLoaded={appState.onMapLoaded.bind(appState)}
         onClickSensor={this.onClickSensor} />
-      <TransitionGroup>
-      {appState.selectedSensor &&
-        <SensorListItem
+      <SensorListItem
           onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
           onClickDetails={this.onClickDetails}
           onClickFavorite={() => appState.isFavoritingSensor = true }
           settings={appState.settings}
-        sensor={appState.selectedSensor} />}
-      </TransitionGroup>
+          sensor={appState.selectedSensor} />
     </Wrapper>;
   }
 

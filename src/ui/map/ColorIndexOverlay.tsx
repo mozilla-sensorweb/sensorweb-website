@@ -10,16 +10,18 @@ export default class ColorIndexOverlay extends React.Component<{}, {}> {
     const colors = getColorArray('light');
     return (
       <ColorIndexOverlayDiv>
-        <Labels>
-          <Label style={{ color: colors[2] }}>Low</Label>
-          <Label style={{ width: 'calc(40%)', color: colors[5] }}>Moderate</Label>
-          <Label style={{ borderRightColor: 'transparent', color: colors[8] }}>High</Label>
-        </Labels>
-        <Bars>
-          {colors.map((c, index) => {
-            return <ColorBar key={index} style={{backgroundColor: c}} />
-          })}
-        </Bars>
+        <div style={{ maxWidth: '30rem', margin: 'auto'}}>
+          <Labels>
+            <Label style={{ color: colors[2] }}>Low</Label>
+            <Label style={{ width: 'calc(40%)', color: colors[5] }}>Moderate</Label>
+            <Label style={{ borderRightColor: 'transparent', color: colors[8] }}>High</Label>
+          </Labels>
+          <Bars>
+            {colors.map((c, index) => {
+              return <ColorBar key={index} style={{backgroundColor: c}} />
+            })}
+          </Bars>
+        </div>
       </ColorIndexOverlayDiv>
     );
   }
