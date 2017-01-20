@@ -38,6 +38,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   map?: L.Map;
   markerLayerDiv: HTMLElement;
   sensorsToMarkers: Map<Sensor, L.Marker> = new Map();
+  currentLocationMarker?: L.Marker;
   didInitialSize = false;
 
   render() {
@@ -62,15 +63,21 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   componentDidUpdate() {
-    if (this.map) {
-      if (this.state.width > 0 && !this.didInitialSize) {
-        this.didInitialSize = true;
-        this.map.invalidateSize(false);
-      } else {
-        this.map.invalidateSize(true);
-      }
-
+    if (!this.map) {
+      return;
     }
+    if (this.state.width > 0 && !this.didInitialSize) {
+      this.didInitialSize = true;
+      this.map.invalidateSize(false);
+    } else {
+      this.map.invalidateSize(true);
+    }
+    if (!this.currentLocationMarker && this.props.currentGpsLocation) {
+      this.currentLocationMarker = L.marker(this.props.currentGpsLocation.toGoogle(), {
+        icon: L.divIcon({ className: 'gpsDot' }),
+      }).addTo(this.map);
+    }
+
     this.renderMarkerLayer();
   }
 
@@ -247,6 +254,40 @@ injectGlobal`
       opacity: 1;
     }
   }
+
+  @keyframes locationPulse {
+      0% { transform: scale(1); opacity: 0.0; }
+      50% { opacity: 0.2; }
+      100% { transform: scale(5); opacity: 0.0; }
+  }
+
+.gpsDot {
+  position: absolute;
+  top: calc(50% - 0.5rem);
+  left: calc(50% - 0.5rem);
+  width: 0.5rem;
+  height: 0.5rem;
+  background: rgba(0, 150, 255, 1);
+  border-radius: 50%;
+  z-index: 11;
+}
+
+  .gpsDot::after {
+    content: '';
+    border-radius: 50%;
+    background: rgba(0, 150, 255, 1);
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+
+    animation: locationPulse 3s ease-out;
+    animation-iteration-count: infinite;
+    opacity: 0.0
+  }
+
 
 `;
 

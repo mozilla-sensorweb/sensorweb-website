@@ -8,6 +8,7 @@ export const List = styled.ul`
 
   display: flex;
   flex-direction: column;
+  flex-basis: 0;
   overflow-y: auto;
 
   background: ${themed.chromeEmptyBackground};
@@ -29,6 +30,17 @@ export const ListItem = styled.li`
       background: ${themed.chromeActiveBackground};
     }
   `}
-
 `;
 
+export const Card = styled(ListItem)`
+  margin: 1rem;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+`;
+
+export const EmptyListItem = styled.li`
+  padding: 1rem;
+  color: #bbb;
+  font-size: larger;
+  text-align: center;
+  margin-top: 2rem;
+`;

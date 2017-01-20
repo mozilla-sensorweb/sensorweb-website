@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Sensor } from '../state';
+import { Sensor, Location } from '../state';
 import { pmToColor } from '../ui/colorScale';
 const { default: styled, injectGlobal } = require<any>('styled-components');
 import { observer, inject } from 'mobx-react';
@@ -16,6 +16,7 @@ interface DetailsDrawerProps {
   onClickDetails: any;
   onClickFavorite: any;
   settings: Settings;
+  currentGpsLocation?: Location;
 }
 
 
@@ -217,6 +218,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
       this.snapTop = newMax;
     }
     this.maxTop = newMax;
+    this.currentTop = this.snapTop;
   })
 
   onMouseMove = (e: { pageY: number } | MouseEvent) => {
@@ -251,6 +253,12 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     const isFavorited = sensor && this.props.settings!.isFavoriteSensor(sensor);
     console.log('render', 'max', this.maxTop, 'cur',this.currentTop, 'snap',this.snapTop);
 
+    let displayDistance = '';
+    if (this.props.currentGpsLocation && sensor) {
+      const km = sensor.location.distanceTo(this.props.currentGpsLocation);
+      displayDistance = km.toFixed(1) + 'km';
+    }
+
     return (
       <Motion
         onRest={this.onSpringRest}
@@ -278,8 +286,9 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
                   this.props.onClickFavorite(sensor);
                 }
               }} />
-            <a className="details-link" style={{marginLeft: 'auto'}}
-              onClick={this.props.onClickDetails}>Sensor Details ></a>
+            <span style={{marginLeft: 'auto'}}>
+              {displayDistance} from your location
+            </span>
           </div> }
         </DetailsDrawerDiv>
       )}</Motion>
@@ -346,8 +355,4 @@ const DetailsDrawerDiv = styled.div`
     padding: 0.5rem;
   }
 
-  & .details-link {
-    color: #039;
-    padding: 0 1rem;
-  }
 `;

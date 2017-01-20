@@ -3,7 +3,7 @@ const { default: styled } = require<any>('styled-components');
 import { SensorRowSummary } from './DetailsDrawer';
 import { AppState } from '../state';
 import { themed } from './theme';
-import { List, ListItem } from './lists';
+import { List, ListItem, EmptyListItem } from './lists';
 
 interface FavoritesPaneProps {
   appState: AppState;
@@ -17,7 +17,7 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
         className="settings"
         onClick={() => appState.showingSettingsPanel = true }
         src={require<string>('../assets/settings-icon.svg')} />
-      <h1>Favorites</h1>
+      <h1>My Locations</h1>
       <List>
         {appState.settings.favoriteSensors.map((fav) => {
           const sensor = appState.knownSensors.get(fav.sensorId);
@@ -31,6 +31,11 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
             </ListItem>
           );
         }).filter(el => !!el)}
+        {appState.settings.favoriteSensors.length === 0 &&
+          <EmptyListItem>
+            No Saved Locations
+          </EmptyListItem>
+        }
       </List>
     </Wrapper>;
   }

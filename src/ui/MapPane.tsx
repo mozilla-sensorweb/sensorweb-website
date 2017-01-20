@@ -28,6 +28,7 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
           onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
           onClickDetails={this.onClickDetails}
           onClickFavorite={() => appState.isFavoritingSensor = true }
+          currentGpsLocation={appState.currentGpsLocation}
           settings={appState.settings}
           sensor={appState.selectedSensor} />
     </Wrapper>;

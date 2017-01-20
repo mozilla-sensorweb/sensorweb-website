@@ -20,7 +20,7 @@ export class AppState {
   @observable knownSensors = new ObservableMap<Sensor>();
   @observable viewingSensorDetails = false;
   @observable isFavoritingSensor = false;
-  @observable currentTab = Tabs.Search;
+  @observable currentTab = Tabs.Map;
   settings = new Settings();
 
   map?: L.Map;

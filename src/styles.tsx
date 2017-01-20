@@ -16,6 +16,7 @@ html {
   font-size: inherit;
 	font-weight: inherit;
 	font-style: normal;
+	list-style: none;
 }
 
 html {

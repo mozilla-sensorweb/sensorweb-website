@@ -7,7 +7,7 @@ import { observer } from 'mobx-react';
 import { debounce } from 'lodash';
 import { themed } from './theme';
 
-import { List, ListItem } from './lists';
+import { List, ListItem, EmptyListItem } from './lists';
 
 
 function geolocate(address: string) {
@@ -23,7 +23,7 @@ function geolocate(address: string) {
     request.addEventListener('error', (evt: ProgressEvent) => {
       reject(evt);
     });
-    request.open('GET', `http://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(address)}`, true);
+    request.open('GET', `http://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&namedetails=1&q=${encodeURIComponent(address)}`, true);
     request.send();
   });
 }
@@ -50,6 +50,7 @@ export default class SearchPane extends React.Component<SearchPaneProps, {}> {
 
   onChange(newValue: string) {
     this.currentValue = newValue;
+    this.searching = true; // We will soon actually perform the search.
     this.updateSuggestions();
   }
 
@@ -69,7 +70,7 @@ export default class SearchPane extends React.Component<SearchPaneProps, {}> {
       this.searching = true;
       return (await geolocate(address)).map((result: any) => ({
         location: new Location(parseFloat(result.lat), parseFloat(result.lon)),
-        name: result.display_name // XXX this is ugly
+        name: formatSearchResult(result)
       }));
     } finally {
       this.searching = false;
@@ -87,6 +88,9 @@ export default class SearchPane extends React.Component<SearchPaneProps, {}> {
   }
 
   render() {
+    const suggestions = this.suggestions && this.suggestions.map((suggestion, index) => (
+      <ListItem key={index} onClick={() => this.selectSuggestion(suggestion)}>{suggestion.name}</ListItem>
+    ));
     return <Wrapper>
       <input
         type="text"
@@ -96,31 +100,13 @@ export default class SearchPane extends React.Component<SearchPaneProps, {}> {
         onKeyPress={(e) => e.key === 'Enter' && this.onEnter()}
         onChange={(e) => this.onChange(e.currentTarget.value)} />
       <List>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        <ListItem>Searching...</ListItem>
-        {this.searching && <ListItem>Searching...</ListItem>}
-        {this.suggestions && this.suggestions.map((suggestion, index) => (
-          <ListItem key={index} onClick={() => this.selectSuggestion(suggestion)}>{suggestion.name}</ListItem>
-        ))}
+        {this.searching
+          ? <EmptyListItem>Searching...</EmptyListItem>
+          : (suggestions && suggestions.length) ?
+            suggestions
+            : !this.currentValue
+              ? <EmptyListItem>Enter an address to find nearby sensors.</EmptyListItem>
+              : <EmptyListItem>No Results</EmptyListItem>}
       </List>
     </Wrapper>;
   }
@@ -153,3 +139,77 @@ const Wrapper = styled.div`
 `;
 
 
+function formatSearchResult(sr: SearchResult) {
+  const a = sr.address;
+  let s = sr.display_name;
+  if (/^zh/.test(navigator.language)) {
+    s = `${a.country}\n${a.postcode}\n${a.city || a.town || a.village}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.road}\n${a.house_number}\n${a.house}`;
+  } else {
+    s = `${a.house}\n${a.house_number} ${a.road}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.city || a.town || a.village} ${a.postcode}\n${a.country}`;
+  }
+  return s.replace(/\s+/, ' ').trim();
+}
+
+interface SearchResult {
+  place_id: string,
+  licence: string,
+  osm_type: string,
+  osm_id: string,
+  boundingbox: string[],
+  lat: string,
+  lon: string,
+  display_name: string,
+  class: string,
+  type: string,
+  importance: number,
+  address: {
+    house_number?: string,
+    road?: string,
+    neighbourhood?: string,
+    city?: string,
+    county?: string,
+    state?: string,
+    postcode?: string,
+    country?: string,
+    country_code?: string,
+    town?: string,
+    village?: string,
+    suburb?: string,
+    city_district?: string,
+    house?: string
+  },
+  namedetails: {
+    name?: string
+  }
+}
+//     "place_id": "60425600",
+//     "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://www.openstreetmap.org/copyright",
+//     "osm_type": "way",
+//     "osm_id": "8789223",
+//     "boundingbox": [
+//         "41.6536931",
+//         "41.6576125",
+//         "-83.5513013",
+//         "-83.5479658"
+//     ],
+//     "lat": "41.6550119",
+//     "lon": "-83.550179",
+//     "display_name": "19th Street, Uptown, Toledo, Lucas County, Ohio, 43624, United States of America",
+//     "class": "highway",
+//     "type": "residential",
+//     "importance": 0.3,
+//     "address": {
+//         "road": "19th Street",
+//         "neighbourhood": "Uptown",
+//         "city": "Toledo",
+//         "county": "Lucas County",
+//         "state": "Ohio",
+//         "postcode": "43624",
+//         "country": "United States of America",
+//         "country_code": "us"
+//     },
+//     "namedetails": {
+//         "name": "19th Street"
+//     }
+
+// }
