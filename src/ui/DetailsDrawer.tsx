@@ -7,10 +7,10 @@ import { observer, inject } from 'mobx-react';
 import { FormattedMessage } from 'react-intl';
 import Settings from '../state/Settings';
 import { fetchJson, fetchJsonP } from '../utils';
-import { observable } from 'mobx';
+import { observable, action } from 'mobx';
 import { Motion, spring } from 'react-motion';
 
-interface SensorListItemProps {
+interface DetailsDrawerProps {
   sensor?: Sensor;
   onClickExpand: any;
   onClickDetails: any;
@@ -127,7 +127,7 @@ const weatherIcons = {
 };
 
 @observer
-export default class SensorListItem extends React.Component<SensorListItemProps, any> {
+export default class DetailsDrawer extends React.Component<DetailsDrawerProps, any> {
   @observable weatherJson?: any;
   el: HTMLElement;
 
@@ -138,6 +138,7 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
   @observable maxTop: number = 0;
   @observable previousPageY: number = 0;
   @observable startPageY: number;
+  @observable enableSpring: boolean = false;
 
   async componentDidMount() {
     this.el.removeEventListener('touchstart', this.onTouchStart);
@@ -153,7 +154,7 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
     }
   }
 
-  conponentWillReceiveProps(nextProps: SensorListItemProps) {
+  conponentWillReceiveProps(nextProps: DetailsDrawerProps) {
     if (nextProps.sensor) {
       this.onNewSensorShown(nextProps.sensor);
     }
@@ -183,6 +184,7 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
     this.startPageY = this.previousPageY = e.pageY;
     this.startTop = this.currentTop = this.el.getBoundingClientRect().top;
     this.isPressed = true;
+    this.enableSpring = true;
   }
 
   onTouchEnd = () => {
@@ -196,7 +198,14 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
     }
   }
 
-  onResize = () => {
+  onSpringRest = () => {
+    console.log('onspringrest', this.isPressed)
+    if (!this.isPressed) {
+      this.enableSpring = false;
+    }
+  }
+
+  onResize = action(() => {
     if (!window.innerHeight) {
       return;
     }
@@ -204,8 +213,11 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
     if (!this.maxTop) {
       this.currentTop = this.snapTop = newMax;
     }
+    if (this.snapTop > 0) {
+      this.snapTop = newMax;
+    }
     this.maxTop = newMax;
-  }
+  })
 
   onMouseMove = (e: { pageY: number } | MouseEvent) => {
     if (this.isPressed) {
@@ -237,12 +249,20 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
   render() {
     const sensor = this.props.sensor;
     const isFavorited = sensor && this.props.settings!.isFavoriteSensor(sensor);
+    console.log('render', 'max', this.maxTop, 'cur',this.currentTop, 'snap',this.snapTop);
 
     return (
-      <Motion style={{ y: this.isPressed || !this.maxTop ? this.currentTop : spring(this.snapTop) }}>{({ y }: any) => (
-        <SensorListItemDiv
+      <Motion
+        onRest={this.onSpringRest}
+        style={{ y: (!this.isPressed && this.enableSpring) ? spring(this.snapTop) : this.currentTop }}>{({ y }: any) => (
+        <DetailsDrawerDiv
           style={{ opacity: this.maxTop && sensor ? 1 : 0, transform: `translateY(${y}px)` }}
           innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
+          <Gripper>
+            <span></span>
+            <span></span>
+            <span></span>
+          </Gripper>
           { sensor &&
           <div className="row">
             <SensorRowSummary sensor={sensor} />
@@ -261,14 +281,26 @@ export default class SensorListItem extends React.Component<SensorListItemProps,
             <a className="details-link" style={{marginLeft: 'auto'}}
               onClick={this.props.onClickDetails}>Sensor Details ></a>
           </div> }
-        </SensorListItemDiv>
+        </DetailsDrawerDiv>
       )}</Motion>
     );
   }
 }
 
-const SensorListItemDiv = styled.div`
-  background: rgba(255, 255, 255, 0.8);
+const Gripper = styled.div`
+  position: absolute;
+  width: 100%;
+  left: 0;
+  height: 40px;
+  top: -40px;
+
+  background: url(${require<string>('../assets/gripper.png')}) no-repeat bottom center / 512px 40px;
+
+  z-index: 1;
+`
+
+const DetailsDrawerDiv = styled.div`
+  background: rgb(255, 255, 255);
   color: black;
   padding: 0.5rem;
   padding-bottom: 0;
@@ -277,7 +309,7 @@ const SensorListItemDiv = styled.div`
   left: 0;
   right: 0;
   height: 100vh;
-  z-index: 500;
+  z-index: 2000;
   transition: opacity 200ms ease;
 
   display: flex;

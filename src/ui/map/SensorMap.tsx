@@ -51,9 +51,6 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
     // XXX cancel!
     let cancel = when(() => leafletLoader.loaded, () => {
       this.loadMap();
-      // autorun(() => {
-      //   this.renderMarkerLayer();
-      // });
     });
 
   }
@@ -157,6 +154,9 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
 
     this.props.onMapLoaded(this.map);
 
+    autorun(() => {
+      this.renderMarkerLayer();
+    });
     window.dispatchEvent(new CustomEvent('READY'));
   }
 

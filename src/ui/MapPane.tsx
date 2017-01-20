@@ -2,7 +2,7 @@ import * as React from 'react';
 const { default: styled } = require<any>('styled-components');
 import SensorMap from './map/SensorMap';
 import TransitionGroup from 'react-addons-transition-group';
-import SensorListItem from './SensorListItem';
+import DetailsDrawer from './DetailsDrawer';
 import { AppState, Sensor } from '../state';
 import { observer } from 'mobx-react';
 import ColorIndexOverlay from './map/ColorIndexOverlay';
@@ -24,7 +24,7 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
         selectedSensor={appState.selectedSensor}
         onMapLoaded={appState.onMapLoaded.bind(appState)}
         onClickSensor={this.onClickSensor} />
-      <SensorListItem
+      <DetailsDrawer
           onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
           onClickDetails={this.onClickDetails}
           onClickFavorite={() => appState.isFavoritingSensor = true }

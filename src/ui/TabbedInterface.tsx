@@ -1,5 +1,6 @@
 import * as React from 'react';
-const { default: styled } = require<any>('styled-components');
+const { default: styled, css } = require<any>('styled-components');
+import { themed } from './theme';
 
 interface TabbedInterfaceProps {
   selectedTab: number;
@@ -63,7 +64,7 @@ const Buttons = styled.div`
   z-index: 1;
 
   justify-content: center;
-  background: white;
+  background: ${themed.chromeBackground};
 `;
 
 const Pane = styled.div`
@@ -76,8 +77,8 @@ const TabButton = styled.div`
   height: 100%;
 
   flex-grow: 1;
-  background: white;
-  color: black;
+  background: ${themed.chromeBackground};
+  color: ${themed.chromeText};
   border-right: 1px solid #ccc;
   &:last-child { border-right: 0 none; }
 
@@ -101,8 +102,11 @@ const TabButton = styled.div`
 
   ${(props: any) => props.isCurrent ? `
     font-weight: bold;
-  ` : `
-    &:hover { background: #f5f5f5; }
+  ` : css`
+    &:hover { background: ${themed.chromeHoverBackground}; }
+    &:active {
+      background: ${themed.chromeActiveBackground};
+    }
     cursor: pointer;
   `}
 `;

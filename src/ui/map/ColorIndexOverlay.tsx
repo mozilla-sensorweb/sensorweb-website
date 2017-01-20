@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { getColorArray } from '../colorScale';
 const styled = require<any>('styled-components').default;
+import { themed } from '../theme';
 
 /**
  * A floating widget that displays the scale of colors for PM2.5 readings.
@@ -33,9 +34,8 @@ const ColorIndexOverlayDiv = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.8);
-  color: #333;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  background: ${themed.chromeBackground};
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
   padding: 0.5rem;
 `;
 

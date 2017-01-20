@@ -1,7 +1,9 @@
 import * as React from 'react';
 const { default: styled } = require<any>('styled-components');
-import { SensorRowSummary } from './SensorListItem';
+import { SensorRowSummary } from './DetailsDrawer';
 import { AppState } from '../state';
+import { themed } from './theme';
+import { List, ListItem } from './lists';
 
 interface FavoritesPaneProps {
   appState: AppState;
@@ -16,20 +18,20 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
         onClick={() => appState.showingSettingsPanel = true }
         src={require<string>('../assets/settings-icon.svg')} />
       <h1>Favorites</h1>
-      <ul>
+      <List>
         {appState.settings.favoriteSensors.map((fav) => {
           const sensor = appState.knownSensors.get(fav.sensorId);
           if (!sensor) {
             return null;
           }
           return (
-            <FavoriteListItem
+            <ListItem
                 onClick={() => { appState.viewSensor(sensor, true); }}>
               <SensorRowSummary sensor={sensor} name={fav.name}/>
-            </FavoriteListItem>
+            </ListItem>
           );
         }).filter(el => !!el)}
-      </ul>
+      </List>
     </Wrapper>;
   }
 };
@@ -37,8 +39,8 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
 
 const Wrapper = styled.div`
   flex-grow: 1;
-  color: black;
-  background: #eee;
+  color: ${themed.chromeText};
+  background: ${themed.chromeEmptyBackground};
 
   & .settings {
     width: 3rem;
@@ -51,8 +53,8 @@ const Wrapper = styled.div`
 
   & h1 {
     font-size: 1.5rem;
-    background: #fff;
     text-align: center;
+    background: ${themed.chromeBackground};
 
     height: 4rem;
     line-height: 4rem;
@@ -67,11 +69,3 @@ const Wrapper = styled.div`
   }
 `;
 
-
-const FavoriteListItem = styled.li`
-  list-style: none;
-  cursor: pointer;
-  padding: 1rem;
-  border-bottom: 1px solid #ccc;
-  background: white;
-`;

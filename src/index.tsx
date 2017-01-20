@@ -7,13 +7,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { observer, Provider } from 'mobx-react';
 
-import SensorMap from './ui/map/SensorMap';
 import STClient from './sensorthings';
-import PageHeader from './ui/PageHeader';
 import FavoritesPane from './ui/FavoritesPane';
 import MapPane from './ui/MapPane';
 import SearchPane from './ui/SearchPane';
-import SensorListItem from './ui/SensorListItem';
 import TabbedInterface from './ui/TabbedInterface';
 import SettingsModal from './ui/SettingsModal';
 import FavoriteModal from './ui/FavoriteModal';
@@ -25,7 +22,8 @@ const { default: styled, ThemeProvider } = require<any>('styled-components');
 
 import { IntlProvider } from 'react-intl';
 import { observable } from 'mobx';
-import TransitionGroup from 'react-addons-transition-group';
+
+import { config as themeConfig } from './ui/theme';
 
 
 @renderOnResize
@@ -42,8 +40,9 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
   render() {
     const appState = this.props.appState;
     const isMobile = (this.state.width < 500);
-    const theme = {
-      isMobile
+    const theme: any = {
+      isMobile,
+      ...themeConfig
     };
 
     return (

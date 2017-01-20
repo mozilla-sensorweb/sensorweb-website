@@ -5,6 +5,9 @@ import { AppState, Location } from '../state';
 import { action, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import { debounce } from 'lodash';
+import { themed } from './theme';
+
+import { List, ListItem } from './lists';
 
 
 function geolocate(address: string) {
@@ -92,12 +95,33 @@ export default class SearchPane extends React.Component<SearchPaneProps, {}> {
         placeholder="Enter Address"
         onKeyPress={(e) => e.key === 'Enter' && this.onEnter()}
         onChange={(e) => this.onChange(e.currentTarget.value)} />
-      <SearchSuggestions>
-        {this.searching && <Suggestion>Searching...</Suggestion>}
+      <List>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        <ListItem>Searching...</ListItem>
+        {this.searching && <ListItem>Searching...</ListItem>}
         {this.suggestions && this.suggestions.map((suggestion, index) => (
-          <Suggestion key={index} onClick={() => this.selectSuggestion(suggestion)}>{suggestion.name}</Suggestion>
+          <ListItem key={index} onClick={() => this.selectSuggestion(suggestion)}>{suggestion.name}</ListItem>
         ))}
-      </SearchSuggestions>
+      </List>
     </Wrapper>;
   }
 };
@@ -108,7 +132,7 @@ const Wrapper = styled.div`
 
   display: flex;
   flex-direction: column;
-  color: black;
+  background: ${themed.chromeEmptyBackground};
 
   & > input {
     font-size: 1.3rem;
@@ -117,19 +141,15 @@ const Wrapper = styled.div`
     font-family: inherit;
     border: 0px none;
     -webkit-appearance: none; /* no inset shadow */
+    color: ${themed.text};
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #aaa;
 
     &[disabled] {
-      color: #aaa;
+      color: ${themed.disabledText};
       opacity: 1;
     }
   }
 `;
 
-
-const SearchSuggestions = styled.div`
-`;
-
-const Suggestion = styled.div`
-  margin: 1rem;
-`;
 
