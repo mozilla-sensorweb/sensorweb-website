@@ -38,8 +38,8 @@ export default class Settings {
   @observable temperatureUnits: 'c' | 'f' = 'c';
   @observable favoriteSensors: FavoriteSensor[] = [];
 
-  isFavoriteSensor(sensor: Sensor) {
-    return !!this.favoriteSensors.find(fav => fav.sensorId === sensor.id);
+  getFavoriteSensor(sensor: Sensor) {
+    return this.favoriteSensors.find(fav => fav.sensorId === sensor.id);
   }
 
   favoriteSensor(sensor: Sensor, name: string) {

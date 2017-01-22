@@ -41,7 +41,7 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
         selected={this.props.selected}
         style={{backgroundColor: shadowColor}} />
       <MarkerNumberWrapper
-        backgroundColor={bgColor}><NumberTween value={pm} />
+        backgroundColor={bgColor}>{pm}
       </MarkerNumberWrapper>
     </SensorMarkerStyledDiv>;
   }
