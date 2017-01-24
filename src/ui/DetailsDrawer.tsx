@@ -49,10 +49,10 @@ const FaceIcon = ({ pm, size }: { size: string, pm: number }) => (
       backgroundColor: pmToColor(pm, 'light'),
       borderRadius: '5px' }} />
 )
-const QualityText = styled(({ pm, style }: { pm: number, style?: any }) => (
+const QualityText = styled(({ pm, style, className }: { pm: number, style?: any, className: string }) => (
   <div
     data-morph-key="QualityText"
-    className="qualityText"
+    className={className}
     style={{...style, color: pmToColor(pm, 'light')}}>{
       pm < 36 ? 'Great Air Quality' :
       pm < 59 ? 'Moderate Quality' :
@@ -62,30 +62,40 @@ const QualityText = styled(({ pm, style }: { pm: number, style?: any }) => (
   text-transform: uppercase;
 `;
 
-const WeatherSummary = styled((props: { temp: number, humidity: number, icon: string, summary: string, className: string }) => {
+const WeatherSummary = styled((props: { expanded: boolean, temp: number, humidity: number, icon: string, summary: string, className: string }) => {
   return (
-    <div data-morph-key="WeatherSummary" className={props.className}>
-      <img
-        src={props.icon}
-        alt={props.summary}
-        title={props.summary}
-        style={{ width: '3rem', height: '3rem' }} />
-      <div>
-        <div className="temp"><FormattedTemperature value={props.temp} /></div>
-        <div style={{whiteSpace: 'nowrap'}}>
-          <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
-          {props.humidity && props.humidity.toFixed() || '--'}<span className="unit">%</span>
+    <div className={props.className}>
+      <div data-morph-key="WeatherSummary" style={{display: 'flex', alignItems: 'center'}}>
+        <img
+          src={props.icon}
+          alt={props.summary}
+          title={props.summary}
+          style={{ width: '3rem', height: '3rem', marginRight: '0.5rem' }} />
+        <div>
+          <div className="temp"><FormattedTemperature value={props.temp} /></div>
+          <div style={{whiteSpace: 'nowrap'}}>
+            {props.humidity && props.humidity.toFixed() || '--'}<span className="unit">%</span>
+            <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
           </div>
+        </div>
       </div>
+      {props.expanded && <div style={{marginTop: '1rem'}}>{props.summary}</div>}
     </div>
   );
 })`
+  align-self: stretch;
+  flex-grow: 2;
+
   display: flex;
-  flex-basis: 7rem;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   border-left: 1px solid #ddd;
-  margin-left: auto;
   padding-left: 1rem;
+  ${(props: any) => props.expanded && css`
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  `}
 `;
 
 const weatherIcons = {
@@ -117,7 +127,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
   @observable enableSpring: boolean = false;
 
   async componentDidMount() {
-    this.el.removeEventListener('touchstart', this.onTouchStart);
+    this.el.addEventListener('touchstart', this.onTouchStart);
     window.addEventListener('touchmove', this.onTouchMove);
     window.addEventListener('touchend', this.onTouchEnd);
     this.el.addEventListener('mousedown', this.onMouseDown);
@@ -157,7 +167,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
   }
 
   onMouseDown = (e: { pageY: number } | MouseEvent) => {
-    (e as any).preventDefault && (e as any).preventDefault();
+    (e instanceof MouseEvent) && e.preventDefault();
     this.startPageY = this.previousPageY = e.pageY;
     this.startTop = this.currentTop = this.el.getBoundingClientRect().top;
     this.isPressed = true;
@@ -186,7 +196,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     if (!window.innerHeight) {
       return;
     }
-    const newMax = window.innerHeight - 175;
+    const newMax = window.innerHeight - 195;
     if (!this.maxTop) {
       this.currentTop = this.snapTop = newMax;
     }
@@ -199,7 +209,8 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
 
   onMouseMove = (e: { pageY: number } | MouseEvent) => {
     if (this.isPressed) {
-      (e as any).preventDefault && (e as any).preventDefault();
+      (e instanceof MouseEvent) && e.preventDefault();
+
       const delta = e.pageY - this.startPageY;
       const immediateDelta = e.pageY - this.previousPageY;
       this.previousPageY = e.pageY;
@@ -277,43 +288,49 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
             <Flex column>
               <Flex row valign="center">
                 <FaceIcon size="3rem" pm={sensor.currentPm} />
-                <Flex column style={{ marginLeft: '1rem' }}>
-                  <div data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</div>
+                <Flex column grow={3} style={{ marginLeft: '1rem' }}>
+                  <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
                   <QualityText pm={sensor.currentPm} />
                 </Flex>
                 <WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />
               </Flex>
-              <Flex row valign="center">
+              <Flex row valign="center" style={{marginTop: '0.5rem'}}>
                 <FavoriteIcon isFavorited={!!favorite} onClick={this.onClickFavorite}>Save</FavoriteIcon>
-                <ShareIcon >Share</ShareIcon>
+                <ShareIcon>Share</ShareIcon>
                 <div style={{marginLeft: 'auto'}}>
                   {displayDistance} from your location
                 </div>
               </Flex>
             </Flex>
 
-            <Flex column>
-              <div data-morph-key="favname" style={{fontSize: '1.5rem'}}>{favorite && favorite.name || 'Sensor'}</div>
-              <Flex row valign="center">
-                <Flex column valign="center">
-                  <Flex row>
+            <Flex column style={{padding: '0.5rem'}}>
+              <div>
+                <img style={{width: '4rem', height: '3rem', verticalAlign: '-70%', paddingRight: '1rem'}} src={require<string>('../assets/collapse-icon.svg')} />
+                <span data-morph-key="favname" style={{fontSize: '1.5rem'}}>{favorite && favorite.name || 'Sensor'}</span>
+              </div>
+              <Flex row valign="center" style={{marginBottom: '1rem'}}>
+                <Flex column valign="center" grow={3}>
+                  <Flex row style={{marginTop: '1rem'}}>
                     <FaceIcon size="5rem" pm={sensor.currentPm} />
-                    <div style={{marginLeft: '1rem' }}><span style={{ fontSize: '3rem', lineHeight: '3rem' }}>{sensor.currentPm}</span><br /> PM2.5</div>
+                    <div style={{marginLeft: '1rem', textAlign: 'center'}}>
+                      <span style={{ fontSize: '4rem', lineHeight: '4rem' }}>{sensor.currentPm}</span><br />PM2.5</div>
                   </Flex>
-                  <QualityText pm={sensor.currentPm} />
+                  <QualityText style={{marginTop: '1rem'}} pm={sensor.currentPm} />
                 </Flex>
-                <Flex column style={{ marginLeft: 'auto' }}>
-                  <WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />
-                  <div>{summary}</div>
-                </Flex>
+                <WeatherSummary expanded={true} icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />
               </Flex>
               <Flex column>
                 <Flex row valign="center">
                   <FavoriteIcon expanded isFavorited={!!favorite} onClick={this.onClickFavorite}>Save</FavoriteIcon>
                   <ShareIcon expanded>Share</ShareIcon>
                 </Flex>
-                <div>
-                  {displayDistance} from your location
+                <div style={{marginTop: '1rem', fontSize: 'smaller'}}>
+                  <div>
+                    {displayDistance} from your location
+                  </div>
+                  <div>
+                    Source: Mozilla Products
+                  </div>
                 </div>
               </Flex>
             </Flex>
@@ -350,6 +367,8 @@ const iconCss = css`
   border: 1px solid #999;
   margin-right: 1rem;
   &:last-child { margin-right: 0 }
+  overflow: hidden;
+
   & > img {
     width: 3rem;
     height: 3rem;
@@ -363,6 +382,9 @@ const iconCss = css`
     & > span {
       display: block;
     }
+    flex-grow: 1;
+    justify-content: center;
+
   `}
 `
 
@@ -370,8 +392,8 @@ const iconCss = css`
 
 const ShareIcon = styled((props: any) => (
   <div data-morph-key="share" className={props.className}>
-    <img src={require<string>('../assets/share-icon.svg')} />
-    <span>{props.children}</span>
+    <img data-morph-key="share-image" src={require<string>('../assets/share-icon.svg')} />
+    <span data-morph-key="share-label">{props.children}</span>
   </div>
 ))`
   ${iconCss}
@@ -379,8 +401,8 @@ const ShareIcon = styled((props: any) => (
 
 const FavoriteIcon = styled((props: any) => (
   <div data-morph-key="favorite" className={props.className} onClick={props.onClick}>
-    <img src={props.isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')} />
-    <span>{props.children}</span>
+    <img data-morph-key="favorite-icon" src={props.isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')} />
+    <span data-morph-key="favorite-image">{props.children}</span>
   </div>
 ))`
   ${iconCss}

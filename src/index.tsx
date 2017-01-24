@@ -25,6 +25,7 @@ import { observable } from 'mobx';
 
 import { config as themeConfig } from './ui/theme';
 
+//(window as any).React = React; // enable react devtools
 
 @renderOnResize
 @observer
