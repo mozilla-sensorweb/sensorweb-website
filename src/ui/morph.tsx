@@ -26,6 +26,25 @@ function nearestCorrespondingParentKeys(node?: HTMLElement | null) {
   return parents;
 }
 
+function keyedElements(root: HTMLElement) {
+  const els = root.querySelectorAll('[data-morph-key]');
+  const ret = new Map<string, HTMLElement>();
+  for (let i = 0; i < els.length; i++) {
+    const el = els[i] as HTMLElement;
+    ret.set(el.getAttribute('data-morph-key')!, el);
+  }
+  return ret;
+}
+function proportionRect(p1: ClientRect, c1: ClientRect, p2: ClientRect) {
+  return {
+    left: p2.left + (c1.left - p1.left) / p1.width * p2.width,
+    top: p2.top + (c1.top - p1.top) / p1.height * p2.height,
+    width: c1.width,
+    height: c1.height
+  } as ClientRect;
+}
+
+
 interface MorphTweenProps {
   percent: number;
 }
@@ -34,18 +53,18 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
   b: HTMLElement;
   c: HTMLElement;
 
+  cachedRects = new Map<HTMLElement, ClientRect>();
+
+  getRect(el: HTMLElement) {
+    let rect = this.cachedRects.get(el);
+    if (!rect) {
+      rect = el.getBoundingClientRect();
+      this.cachedRects.set(el, rect);
+    }
+    return rect;
+  }
 
   componentDidUpdate() {
-    function keyedElements(root: HTMLElement) {
-      const els = root.querySelectorAll('[data-morph-key]');
-      const ret = new Map<string, HTMLElement>();
-      for (let i = 0; i < els.length; i++) {
-        const el = els[i] as HTMLElement;
-        ret.set(el.getAttribute('data-morph-key')!, el);
-      }
-      return ret;
-    }
-
     const aMorphs = keyedElements(this.a);
     const bMorphs = keyedElements(this.b);
     const allKeys = _.uniq([...aMorphs.keys(), ...bMorphs.keys()]);
@@ -61,6 +80,10 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
       to: any;
     }
     const animMap = new Map<string, Anim>();
+
+    if (this.props.percent === 0 || this.props.percent === 1) {
+      this.cachedRects.clear();
+    }
 
     allKeys.forEach((key: string) => {
       const a = aMorphs.get(key);
@@ -87,21 +110,12 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
         }
       }
 
-      let rectA = a && a.getBoundingClientRect();
-      let rectB = b && b.getBoundingClientRect();
-      let rectParentA = parentA.getBoundingClientRect();
-      let rectParentB = parentB.getBoundingClientRect();
+      let rectA = a && this.getRect(a);
+      let rectB = b && this.getRect(b);
+      let rectParentA = this.getRect(parentA);
+      let rectParentB = this.getRect(parentB);
       let startOpacity = 1;
       let endOpacity = 1;
-
-      function proportionRect(p1: ClientRect, c1: ClientRect, p2: ClientRect) {
-        return {
-          left: p2.left + (c1.left - p1.left) / p1.width * p2.width,
-          top: p2.top + (c1.top - p1.top) / p1.height * p2.height,
-          width: c1.width,
-          height: c1.height
-        } as ClientRect;
-      }
 
       if (!rectA || (rectA.width === 0 && rectA.height === 0)) {
         rectA = proportionRect(rectParentB, rectB!, rectParentA);
@@ -143,7 +157,6 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
       let el = this.c.querySelector(`[data-morph-key="${key}-C"]`) as HTMLElement | undefined;
       if (!el) {
         el = (b || a)!.cloneNode(true) as HTMLElement;
-        this.c.appendChild(el);
         el.classList.add('hideMorphing');
         el.setAttribute('data-morph-key', key + '-C');
         el.style.position = 'absolute';
@@ -151,6 +164,7 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
         el.style.left = '0';
         el.style.margin = '0';
         el.style.visibility = 'visible'; // override hideMorphing!
+        this.c.appendChild(el);
       }
 
       animMap.set(key, {
@@ -163,7 +177,7 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     });
 
     // Assemble the tree.
-    for (let [key, anim] of animMap) {
+    for (let anim of animMap.values()) {
       let animParent = animMap.get(anim.parentKey);
       (animParent && animParent.el || this.c).appendChild(anim.el);
     }
