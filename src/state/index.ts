@@ -20,10 +20,29 @@ export class AppState {
   @observable knownSensors = new ObservableMap<Sensor>();
   @observable viewingSensorDetails = false;
   @observable isFavoritingSensor = false;
-  @observable currentTab = Tabs.Map;
+  @observable isUnfavoritingSensor = false;
+  @observable currentToast?: string;
+  @observable currentTab = Tabs.Favorites;
   settings = new Settings();
 
   map?: L.Map;
+
+  constructor() {
+    // View the Map tab if we have no favorites.
+    if (!this.settings.favoriteSensors.length) {
+      this.currentTab = Tabs.Map;
+    }
+  }
+
+  toastTimeout: number;
+  @action toast(str: string) {
+    this.currentToast = str;
+    // XXX this can be improved
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => {
+      this.currentToast = undefined;
+    }, 3000);
+  }
 
   @action setCurrentGpsLocation(location: Location) {
     this.currentGpsLocation = location;

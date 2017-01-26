@@ -10,11 +10,14 @@ import { fetchJson, fetchJsonP } from '../utils';
 import { observable, action } from 'mobx';
 import { Motion, spring } from 'react-motion';
 
+import moment from 'moment';
+
 interface DetailsDrawerProps {
   sensor?: Sensor;
   onClickExpand: any;
   onClickDetails: any;
   onClickFavorite: any;
+  onClickUnfavorite: any;
   settings: Settings;
   currentGpsLocation?: Location;
 }
@@ -140,7 +143,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     }
   }
 
-  conponentWillReceiveProps(nextProps: DetailsDrawerProps) {
+  componentWillReceiveProps(nextProps: DetailsDrawerProps) {
     if (nextProps.sensor) {
       this.onNewSensorShown(nextProps.sensor);
     }
@@ -219,7 +222,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
       const wasOpen = this.startTop < (this.maxTop / 2);
       if (Math.abs(delta) < 10 || !immediateDelta) {
         // If the total delta was very small, toggle it.
-        this.snapTop = wasOpen ? this.maxTop : 0;
+        //this.snapTop = wasOpen ? this.maxTop : 0;
       } else {
         // Otherwise, take the direction from our immediate velocity.
         this.snapTop = immediateDelta > 0 ? this.maxTop : 0;
@@ -231,7 +234,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     if (this.startPageY === this.previousPageY) {
       // we didn't move, toggle it
       const wasOpen = this.startTop < (this.maxTop / 2);
-      this.snapTop = wasOpen ? this.maxTop : 0;
+      //this.snapTop = wasOpen ? this.maxTop : 0;
     }
     this.isPressed = false;
   }
@@ -244,7 +247,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     const isFavorited = sensor && this.props.settings!.getFavoriteSensor(sensor);
 
     if (isFavorited) {
-      this.props.settings!.unfavoriteSensor(sensor);
+      this.props.onClickUnfavorite(sensor);
     } else {
       this.props.onClickFavorite(sensor);
     }
@@ -258,13 +261,19 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     let displayDistance = '';
     if (this.props.currentGpsLocation && sensor) {
       const km = sensor.location.distanceTo(this.props.currentGpsLocation);
-      displayDistance = km.toFixed(1) + 'km';
+      if (this.props.settings!.temperatureUnits === 'c') {
+        displayDistance = km.toFixed(0) + ' km';
+      } else {
+        let miles = (km * 0.62137).toFixed(0);
+        displayDistance = miles + (miles === '1' ? ' mile' : ' miles');
+      }
     }
 
     let temp = sensor && sensor.currentTemperature;
     let humidity = sensor && sensor.currentHumidity;
     let iconUrl = weatherIcons['unknown'];
     let summary = 'unknown';
+
     if (this.weatherJson && this.weatherJson.weather && this.weatherJson.weather[0]) {
       iconUrl = `http://openweathermap.org/img/w/${this.weatherJson.weather[0].icon}.png`;
       if (!temp) {
@@ -275,6 +284,11 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
       }
       summary = this.weatherJson.weather[0].summary;
     }
+    let isStale = sensor && sensor.latestReading && sensor.latestReading.date.getTime() < (Date.now() - 1000*60*60);
+    let age = '';
+    if (sensor && sensor.latestReading) {
+      age = moment(sensor && sensor.latestReading.date).fromNow();
+    }
 
     return (
       <Motion
@@ -282,7 +296,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
         style={{ y: (!this.isPressed && this.enableSpring) ? spring(this.snapTop) : this.currentTop }}>{({ y }: any) => (
         <DetailsDrawerDiv
           style={{ opacity: this.maxTop && sensor ? 1 : 0, transform: `translateY(${y}px)` }}
-          innerRef={(el: HTMLElement) => this.el = el} onClick={this.props.onClickExpand}>
+          innerRef={(el: HTMLElement) => this.el = el} /*onClick={this.props.onClickExpand}*/>
           <Gripper />
           {sensor && <MorphTween percent={1 - y / this.maxTop}>
             <Flex column>
@@ -298,7 +312,8 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
                 <FavoriteIcon isFavorited={!!favorite} onClick={this.onClickFavorite}>Save</FavoriteIcon>
                 <ShareIcon>Share</ShareIcon>
                 <div style={{marginLeft: 'auto'}}>
-                  {displayDistance} from your location
+                  <div>{displayDistance} from your location</div>
+                  <div style={{color: isStale ? '#900' : '#999'}}>Updated {age}.</div>
                 </div>
               </Flex>
             </Flex>
@@ -389,6 +404,18 @@ const iconCss = css`
 `
 
 
+export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) => {
+  const sensor = props.sensor;
+  const favorite = props.settings!.getFavoriteSensor(sensor);
+  return <Flex row valign="center">
+    <FaceIcon size="3rem" pm={sensor.currentPm} />
+    <Flex column grow={3} style={{ marginLeft: '1rem' }}>
+      <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
+      <QualityText pm={sensor.currentPm} />
+    </Flex>
+    {/*<WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />*/}
+  </Flex>;
+}
 
 const ShareIcon = styled((props: any) => (
   <div data-morph-key="share" className={props.className}>

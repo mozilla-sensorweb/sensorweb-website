@@ -1,6 +1,6 @@
 import { observable, autorun } from 'mobx';
 import Sensor from './Sensor';
-interface FavoriteSensor {
+export interface FavoriteSensor {
   sensorId: string;
   name: string;
 }

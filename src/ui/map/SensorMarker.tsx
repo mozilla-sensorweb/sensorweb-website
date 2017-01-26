@@ -7,6 +7,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import { Sensor } from '../../state';
+import Settings, { FavoriteSensor } from '../../state/Settings';
 
 import NumberTween from '../NumberTween';
 
@@ -14,6 +15,7 @@ const { default: styled, keyframes } = require<any>('styled-components');
 
 interface SensorMarkerProps {
   sensor: Sensor;
+  favorite?: FavoriteSensor;
   selected: boolean;
 }
 
@@ -25,6 +27,7 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
 
   shouldComponentUpdate(nextProps: SensorMarkerProps) {
     return nextProps.sensor !== this.props.sensor ||
+      nextProps.favorite !== this.props.favorite ||
       nextProps.sensor.currentPm !== this.props.sensor.currentPm ||
       nextProps.selected !== this.props.selected;
   }
@@ -41,7 +44,9 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
         selected={this.props.selected}
         style={{backgroundColor: shadowColor}} />
       <MarkerNumberWrapper
-        backgroundColor={bgColor}>{pm}
+        backgroundColor={bgColor}>
+        {pm}
+        {this.props.favorite && <img src={require<string>('../../assets/star-icon-on.svg')}/>}
       </MarkerNumberWrapper>
     </SensorMarkerStyledDiv>;
   }
@@ -78,6 +83,16 @@ const MarkerNumberWrapper = styled.span`
   height: 100%;
   background-color: ${(props: any) => props.backgroundColor};
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
+
+  & img {
+    width: 2rem;
+    height: 2rem;
+    position: absolute;
+    top: 0.1rem;
+    left: 50%;
+    margin-left: -1rem;
+    margin-top: -1rem;
+  }
 
   &::before {
     border: 5px solid white;

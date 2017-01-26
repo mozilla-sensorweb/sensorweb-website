@@ -2,13 +2,14 @@ const { default: styled } = require<any>('styled-components');
 import * as React from 'react';
 import Modal from './Modal';
 import Settings from '../state/Settings';
+import { observer } from 'mobx-react';
 
 interface SettingsModalProps {
   onClose(): void;
   settings: Settings;
 }
 
-
+@observer
 export default class SettingsModal extends React.Component<SettingsModalProps, any> {
 
   render() {

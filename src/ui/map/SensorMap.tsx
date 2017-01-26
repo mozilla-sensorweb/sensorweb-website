@@ -8,6 +8,7 @@ import * as _ from 'lodash';
 import * as d3 from 'd3';
 
 import { Sensor, Location } from '../../state';
+import Settings from '../../state/Settings';
 
 import LeafletLoader from './LeafletLoader';
 import SensorMarker from './SensorMarker';
@@ -22,6 +23,7 @@ interface SensorMapProps {
   knownSensors: ObservableMap<Sensor>;
   selectedSensor?: Sensor;
   currentGpsLocation?: Location;
+  settings: Settings;
   onClickSensor(sensor?: Sensor): void;
   onMapLoaded(map: L.Map): void;
 }
@@ -88,7 +90,7 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
   }
 
   renderMarkerLayer() {
-    console.log('renderMarkerLayer', new Error().stack);
+    //console.log('renderMarkerLayer', new Error().stack);
     if (!this.map) {
       return;
     }
@@ -114,10 +116,13 @@ export default class SensorMap extends React.Component<SensorMapProps, ResizeSta
         this.sensorsToMarkers.set(sensor, marker);
       }
       const isSelected = (sensor === this.props.selectedSensor);
+      let fav = this.props.settings.getFavoriteSensor(sensor);
+
       ReactDOM.render(
         <SensorMarker
           sensor={sensor}
           selected={isSelected}
+          favorite={fav}
           />, marker.getElement());
     });
   }

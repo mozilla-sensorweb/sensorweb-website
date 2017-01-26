@@ -6,7 +6,7 @@ import Sensor from '../state/Sensor';
 
 
 interface FavoriteModalProps {
-  onClose(): void;
+  onClose(saved: boolean): void;
   settings: Settings;
   sensor: Sensor;
 }
@@ -22,7 +22,7 @@ export default class FavoriteModal extends React.Component<FavoriteModalProps, a
   render() {
     const settings = this.props.settings;
     return (
-      <Modal title="Favorite Sensor" onClose={this.props.onClose}>
+      <Modal title="Favorite Sensor" onClose={() => this.props.onClose(false)}>
         <SettingsDiv>
           <p>Enter a name for this sensor:</p>
           <p><input type="text" onKeyDown={(e) => e.key === 'Enter' && this.save()} ref={el => this.input = el} /></p>
@@ -38,7 +38,7 @@ export default class FavoriteModal extends React.Component<FavoriteModalProps, a
       name = 'Sensor';
     }
     this.props.settings.favoriteSensor(this.props.sensor, name);
-    this.props.onClose();
+    this.props.onClose(true);
   }
 }
 

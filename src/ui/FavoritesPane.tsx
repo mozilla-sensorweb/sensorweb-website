@@ -1,6 +1,6 @@
 import * as React from 'react';
 const { default: styled } = require<any>('styled-components');
-//import { SensorRowSummary } from './DetailsDrawer';
+import { SensorRowSummary } from './DetailsDrawer';
 import { AppState } from '../state';
 import { themed } from './theme';
 import { List, ListItem, EmptyListItem } from './lists';
@@ -27,7 +27,7 @@ export default class FavoritesPane extends React.Component<FavoritesPaneProps, {
           return (
             <ListItem
                 onClick={() => { appState.viewSensor(sensor, true); }}>
-              {/*<SensorRowSummary sensor={sensor} name={fav.name}/>*/}
+              <SensorRowSummary sensor={sensor} settings={appState.settings} />
             </ListItem>
           );
         }).filter(el => !!el)}

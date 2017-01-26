@@ -71,6 +71,9 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     aMorphs.set('ROOT', this.a);
     bMorphs.set('ROOT', this.b);
 
+    // XXX
+    this.c.innerHTML = '';
+
 
     interface Anim {
       key: string;

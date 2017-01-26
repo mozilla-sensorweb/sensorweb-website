@@ -23,11 +23,13 @@ export default class MapPane extends React.Component<MapPaneProps, {}> {
         knownSensors={appState.knownSensors}
         selectedSensor={appState.selectedSensor}
         onMapLoaded={appState.onMapLoaded.bind(appState)}
+        settings={appState.settings}
         onClickSensor={this.onClickSensor} />
       <DetailsDrawer
           onClickExpand={() => { /*this.expanded = !this.expanded;*/ }}
           onClickDetails={this.onClickDetails}
           onClickFavorite={() => appState.isFavoritingSensor = true }
+          onClickUnfavorite={() => appState.isUnfavoritingSensor = true }
           currentGpsLocation={appState.currentGpsLocation}
           settings={appState.settings}
           sensor={appState.selectedSensor} />
