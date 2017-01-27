@@ -9,6 +9,8 @@ import Settings from '../state/Settings';
 import { fetchJson, fetchJsonP } from '../utils';
 import { observable, action } from 'mobx';
 import { Motion, spring } from 'react-motion';
+import { themed } from './theme';
+import { WeatherSummary } from './weather';
 
 import moment from 'moment';
 
@@ -26,104 +28,63 @@ import { MorphTween } from './Morph';
 
 
 const FormattedTemperature = inject('settings')(observer((props: { value: any, settings: Settings }) => {
-  const unit = props.settings.temperatureUnits;
+  const unit = props.settings.units;
   let value = props.value;
-  if (unit === 'f') {
+  if (unit === 'imperial') {
     value = value * 1.8 + 32;
   }
 
-  return <span>{value && value.toFixed ? value.toFixed() : '--'}°{unit === 'c' ? 'C' : 'F'}</span>
+  return <span>{value && value.toFixed ? value.toFixed() : '--'}°{unit === 'metric' ? 'C' : 'F'}</span>
 }));
 
 /**
  * A row in a list showing the details for a given sensor in brief.
  */
 
-const FaceIcon = ({ pm, size }: { size: string, pm: number }) => (
+const FaceIcon = ({ pm, size }: { size: string, pm?: number }) => (
   <img
     data-morph-key="FaceIcon"
     className="icon"
-    src={pm < 36 ? require<string>('../assets/face-great.svg') :
-         pm  < 59 ? require<string>('../assets/face-moderate.svg') :
+    src={pm === undefined ? require<string>('../assets/face-unknown.svg') :
+         pm < 36 ? require<string>('../assets/face-great.svg') :
+         pm < 59 ? require<string>('../assets/face-moderate.svg') :
          require<string>('../assets/face-bad.svg')}
     style={{
       width: size,
       height: size,
-      backgroundColor: pmToColor(pm, 'light'),
+      backgroundColor: pmToColor(pm),
       borderRadius: '5px' }} />
 )
-const QualityText = styled(({ pm, style, className }: { pm: number, style?: any, className: string }) => (
-  <div
+
+
+const QualityText = styled(({ sensor, style, className }: { sensor: Sensor, style?: any, className: string }) => {
+  let pm = sensor.currentPm;
+
+  return <div
     data-morph-key="QualityText"
     className={className}
-    style={{...style, color: pmToColor(pm, 'light')}}>{
+    style={{...style, color: pmToColor(pm)}}>{
+      pm === undefined ?
+        (sensor.latestReading ? 'No Data for ' + moment(sensor.latestReading.date).fromNow(true) : 'No Data') :
       pm < 36 ? 'Great Air Quality' :
       pm < 59 ? 'Moderate Quality' :
       'Bad Air Quality'
-    }</div>
-))`
+    }
+  </div>;
+})`
   text-transform: uppercase;
 `;
 
-const WeatherSummary = styled((props: { expanded: boolean, temp: number, humidity: number, icon: string, summary: string, className: string }) => {
-  return (
-    <div className={props.className}>
-      <div data-morph-key="WeatherSummary" style={{display: 'flex', alignItems: 'center'}}>
-        <img
-          src={props.icon}
-          alt={props.summary}
-          title={props.summary}
-          style={{ width: '3rem', height: '3rem', marginRight: '0.5rem' }} />
-        <div>
-          <div className="temp"><FormattedTemperature value={props.temp} /></div>
-          <div style={{whiteSpace: 'nowrap'}}>
-            {props.humidity && props.humidity.toFixed() || '--'}<span className="unit">%</span>
-            <img src={require<string>('../assets/humidity-icon.svg')} style={{width: '1em', height: '1em', position: 'relative', top: '2px'}} />
-          </div>
-        </div>
-      </div>
-      {props.expanded && <div style={{marginTop: '1rem'}}>{props.summary}</div>}
-    </div>
-  );
-})`
-  align-self: stretch;
-  flex-grow: 2;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-left: 1px solid #ddd;
-  padding-left: 1rem;
-  ${(props: any) => props.expanded && css`
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  `}
-`;
-
-const weatherIcons = {
-  'clear-day': require<string>('../assets/weather-icons/clear-day.svg'),
-  'clear-night': require<string>('../assets/weather-icons/clear-night.svg'),
-  'rain': require<string>('../assets/weather-icons/rain.svg'),
-  'snow': require<string>('../assets/weather-icons/snow.svg'),
-  'sleet': require<string>('../assets/weather-icons/sleet.svg'),
-  'wind': require<string>('../assets/weather-icons/wind.svg'),
-  'fog': require<string>('../assets/weather-icons/fog.svg'),
-  'cloudy': require<string>('../assets/weather-icons/cloudy.svg'),
-  'unknown': require<string>('../assets/weather-icons/unknown.svg'),
-  'partly-cloudy-day': require<string>('../assets/weather-icons/partly-cloudy-day.svg'),
-  'partly-cloudy-night': require<string>('../assets/weather-icons/partly-cloudy-night.svg'),
-};
 
 @observer
 export default class DetailsDrawer extends React.Component<DetailsDrawerProps, any> {
-  @observable weatherJson?: any;
   el: HTMLElement;
 
   @observable isPressed: boolean = false;
   @observable currentTop: number = 0;
   @observable startTop: number = 0;
   @observable snapTop: number = 0;
+  @observable minTop: number = 30;
   @observable maxTop: number = 0;
   @observable previousPageY: number = 0;
   @observable startPageY: number;
@@ -138,22 +99,6 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     window.addEventListener('mouseup', this.onMouseUp);
     window.addEventListener('resize', this.onResize);
     this.onResize();
-    if (this.props.sensor) {
-      this.onNewSensorShown(this.props.sensor);
-    }
-  }
-
-  componentWillReceiveProps(nextProps: DetailsDrawerProps) {
-    if (nextProps.sensor) {
-      this.onNewSensorShown(nextProps.sensor);
-    }
-  }
-
-  async onNewSensorShown(sensor: Sensor) {
-    const { latitude, longitude } = sensor.location;
-    //const url = `https://api.darksky.net/forecast/ef9d0582dae0cc7e34783d8b70f37dfb/${latitude},${longitude}`;
-    const url = `http://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=172c63f7cadd6363539161affd0513d8&callback=?`;
-    this.weatherJson = (await fetchJsonP<any>(url));
   }
 
   componentWillUnmount() {
@@ -173,6 +118,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     (e instanceof MouseEvent) && e.preventDefault();
     this.startPageY = this.previousPageY = e.pageY;
     this.startTop = this.currentTop = this.el.getBoundingClientRect().top;
+    console.log('el', this.el.getBoundingClientRect(), this.el)
     this.isPressed = true;
     this.enableSpring = true;
   }
@@ -195,6 +141,18 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     }
   }
 
+  percentTop(current: number) {
+   // Because springs move slowly at the end of their life, we end up waiting
+   // unnecessarily long for the element to completely come to rest. In practice,
+   // we want the user to be able to tap things as soon as the element is perceptibly there.
+   current = Math.round(current);
+
+   const range = (this.maxTop - this.minTop);
+   const value = (current - this.minTop);
+   const percent = value / range;
+   return percent;
+  }
+
   onResize = action(() => {
     if (!window.innerHeight) {
       return;
@@ -203,7 +161,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
     if (!this.maxTop) {
       this.currentTop = this.snapTop = newMax;
     }
-    if (this.snapTop > 0) {
+    if (this.snapTop > this.minTop) {
       this.snapTop = newMax;
     }
     this.maxTop = newMax;
@@ -217,15 +175,15 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
       const delta = e.pageY - this.startPageY;
       const immediateDelta = e.pageY - this.previousPageY;
       this.previousPageY = e.pageY;
-      this.currentTop = Math.max(0, Math.min(this.maxTop, this.startTop + delta));
+      this.currentTop = Math.max(this.minTop, Math.min(this.maxTop, this.startTop + delta));
 
-      const wasOpen = this.startTop < (this.maxTop / 2);
+      const wasOpen = this.percentTop(this.currentTop) < 0.5;
       if (Math.abs(delta) < 10 || !immediateDelta) {
         // If the total delta was very small, toggle it.
         //this.snapTop = wasOpen ? this.maxTop : 0;
       } else {
         // Otherwise, take the direction from our immediate velocity.
-        this.snapTop = immediateDelta > 0 ? this.maxTop : 0;
+        this.snapTop = immediateDelta > 0 ? this.maxTop : this.minTop;
       }
     }
   }
@@ -233,7 +191,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
   onMouseUp = () => {
     if (this.startPageY === this.previousPageY) {
       // we didn't move, toggle it
-      const wasOpen = this.startTop < (this.maxTop / 2);
+      const wasOpen = this.percentTop(this.currentTop) < 0.5;
       //this.snapTop = wasOpen ? this.maxTop : 0;
     }
     this.isPressed = false;
@@ -256,12 +214,12 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
   render() {
     const sensor = this.props.sensor;
     const favorite = sensor && this.props.settings!.getFavoriteSensor(sensor);
-    //console.log('render', 'max', this.maxTop, 'cur',this.currentTop, 'snap',this.snapTop);
+    console.log('render', 'max', this.maxTop, 'cur',this.currentTop, 'snap',this.snapTop);
 
     let displayDistance = '';
     if (this.props.currentGpsLocation && sensor) {
       const km = sensor.location.distanceTo(this.props.currentGpsLocation);
-      if (this.props.settings!.temperatureUnits === 'c') {
+      if (this.props.settings!.units === 'metric') {
         displayDistance = km.toFixed(0) + ' km';
       } else {
         let miles = (km * 0.62137).toFixed(0);
@@ -269,21 +227,6 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
       }
     }
 
-    let temp = sensor && sensor.currentTemperature;
-    let humidity = sensor && sensor.currentHumidity;
-    let iconUrl = weatherIcons['unknown'];
-    let summary = 'unknown';
-
-    if (this.weatherJson && this.weatherJson.weather && this.weatherJson.weather[0]) {
-      iconUrl = `http://openweathermap.org/img/w/${this.weatherJson.weather[0].icon}.png`;
-      if (!temp) {
-        temp = this.weatherJson.main.temp - 273.15;
-      }
-      if (!humidity) {
-        humidity = this.weatherJson.main.humidity;
-      }
-      summary = this.weatherJson.weather[0].summary;
-    }
     let isStale = sensor && sensor.latestReading && sensor.latestReading.date.getTime() < (Date.now() - 1000*60*60);
     let age = '';
     if (sensor && sensor.latestReading) {
@@ -298,15 +241,15 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
           style={{ opacity: this.maxTop && sensor ? 1 : 0, transform: `translateY(${y}px)` }}
           innerRef={(el: HTMLElement) => this.el = el} /*onClick={this.props.onClickExpand}*/>
           <Gripper />
-          {sensor && <MorphTween percent={1 - y / this.maxTop}>
+          {sensor && <MorphTween percent={1 - this.percentTop(y)}>
             <Flex column>
               <Flex row valign="center">
                 <FaceIcon size="3rem" pm={sensor.currentPm} />
                 <Flex column grow={3} style={{ marginLeft: '1rem' }}>
                   <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
-                  <QualityText pm={sensor.currentPm} />
+                  <QualityText sensor={sensor} />
                 </Flex>
-                <WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />
+                <WeatherSummary units={this.props.settings.units} location={sensor.location} />
               </Flex>
               <Flex row valign="center" style={{marginTop: '0.5rem'}}>
                 <FavoriteIcon isFavorited={!!favorite} onClick={this.onClickFavorite}>Save</FavoriteIcon>
@@ -330,9 +273,9 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
                     <div style={{marginLeft: '1rem', textAlign: 'center'}}>
                       <span style={{ fontSize: '4rem', lineHeight: '4rem' }}>{sensor.currentPm}</span><br />PM2.5</div>
                   </Flex>
-                  <QualityText style={{marginTop: '1rem'}} pm={sensor.currentPm} />
+                  <QualityText style={{marginTop: '1rem'}} sensor={sensor} />
                 </Flex>
-                <WeatherSummary expanded={true} icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />
+                <WeatherSummary expanded units={this.props.settings.units} location={sensor.location} />
               </Flex>
               <Flex column>
                 <Flex row valign="center">
@@ -343,6 +286,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
                   <div>
                     {displayDistance} from your location
                   </div>
+                  <div style={{color: isStale ? '#900' : '#999'}}>Updated {age}.</div>
                   <div>
                     Source: Mozilla Products
                   </div>
@@ -379,10 +323,18 @@ const Flex = (props: any) => {
 const iconCss = css`
   display: flex;
   align-items: center;
-  border: 1px solid #999;
-  margin-right: 1rem;
+  border: 2px solid #eee;
+  border-radius: 6px;
+  margin-right: 0.5rem;
   &:last-child { margin-right: 0 }
   overflow: hidden;
+
+  &:hover {
+    background: ${themed.chromeHoverBackground};
+  }
+  &:active {
+    background: ${themed.chromeActiveBackground};
+  }
 
   & > img {
     width: 3rem;
@@ -411,7 +363,7 @@ export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) 
     <FaceIcon size="3rem" pm={sensor.currentPm} />
     <Flex column grow={3} style={{ marginLeft: '1rem' }}>
       <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
-      <QualityText pm={sensor.currentPm} />
+      <QualityText sensor={sensor} />
     </Flex>
     {/*<WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />*/}
   </Flex>;
@@ -453,7 +405,7 @@ const DetailsDrawerDiv = styled.div`
   padding: 0.5rem;
   padding-bottom: 0;
   position: absolute;
-  top: 0;
+  top: -30px;
   left: 0;
   right: 0;
   height: 100vh;

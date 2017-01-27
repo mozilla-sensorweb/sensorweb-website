@@ -1,9 +1,11 @@
 import * as React from 'react';
 const { default: styled } = require<any>('styled-components');
+import { themed } from './theme';
 
 interface ModalProps {
   onClose(): void;
   title: string;
+  buttons?: React.ReactElement<any>[];
 }
 
 const TRANSITION_TIME_MS = 200;
@@ -35,10 +37,11 @@ export default class Modal extends React.Component<ModalProps, any> {
       <ModalDivWrapper innerRef={(el: any) => this.backdrop = el} onClick={this.beginClose}>
         <ModalDiv innerRef={(el: any) => this.el = el} onClick={(e: any) => e.stopPropagation() }>
           <div style={{display: 'flex'}}>
-            <img  onClick={this.beginClose} className="close-button" src={require<string>('../assets/close-icon.svg')} />
+            {/*<img onClick={this.beginClose} className="close-button" src={require<string>('../assets/close-icon.svg')} />*/}
             <h1 style={{flexGrow: 1, alignSelf: 'center'}}>{this.props.title}</h1>
           </div>
           {this.props.children}
+          {this.props.buttons && <div className="buttons">{this.props.buttons}</div>}
         </ModalDiv>
       </ModalDivWrapper>
     );
@@ -56,6 +59,8 @@ const ModalDivWrapper = styled.div`
   z-index: 11001;
   background: rgba(0, 0, 0, 0.4);
   opacity: 0;
+
+  padding: 0.5rem;
 
   &.loaded {
     opacity: 1;
@@ -79,6 +84,32 @@ const ModalDiv = styled.div`
   opacity: 0;
   transform: scale(0.7);
   box-shadow: 0 0 4rem rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+
+  & .buttons {
+    text-align: right;
+
+    & button {
+      margin-right: 1rem;
+      padding: .5rem 2rem;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      font-size: larger;
+      color: #999;
+      border: 2px solid #999;
+      border-radius: 6px;
+      background: none;
+      &:hover { background: ${themed.chromeHoverBackground}; }
+      &:active { background: ${themed.chromeActiveBackground}; }
+      &:focus { outline: none; }
+    }
+
+    & > :last-child {
+      color: #06F;
+      border: 2px solid #06F;
+      margin-right: 0;
+    }
+  }
 
   &.loaded {
     transform: scale(1);
@@ -94,11 +125,40 @@ const ModalDiv = styled.div`
 
   & h1 {
     font-size: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   & .close-button {
     width: 3rem;
     height: 3rem;
     padding: 0.5rem;
+  }
+
+
+  padding: 1rem;
+
+  & label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  & p {
+    margin-bottom: 1rem;
+  }
+
+  & input {
+    width: 100%;
+    padding: 0.5rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+
+    &:focus {
+      box-shadow: 0 0 3px #3863FF;
+    }
   }
 `;

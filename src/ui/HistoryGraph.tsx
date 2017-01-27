@@ -208,7 +208,7 @@ class HistorySvg extends React.Component<HistorySvgProps, ResizeState> {
         console.log('DATA', x, scale(x), this.props.data.length);
       }
       const pm = this.props.data[scale(x)].pm;
-      this.pointerEl.setAttribute('fill', pmToColor(pm, 'light'));
+      this.pointerEl.setAttribute('fill', pmToColor(pm));
       this.pointerText.textContent = pm.toFixed(0) + '';
     }
   }

@@ -3,6 +3,8 @@ import * as _ from 'lodash';
 import Location from './Location';
 export { default as Location } from './Location';
 
+const MAX_VALID_AGE = 1000 * 60 * 60 * 24;
+
 export default class Sensor {
   id: string;
   @observable location: Location;
@@ -18,17 +20,21 @@ export default class Sensor {
     this.knownReadings.splice(index, 0, reading);
   }
 
+  @computed get isValid(): boolean {
+    return !!(this.latestReading && (this.latestReading.date.getTime() > Date.now() - MAX_VALID_AGE));
+  }
+
   @computed get latestReading(): SensorReading | undefined {
     return this.knownReadings[this.knownReadings.length - 1];
   }
   @computed get currentPm() {
-    return this.latestReading ? this.latestReading.pm : 0;
+    return this.isValid && this.latestReading ? this.latestReading.pm : undefined;
   }
   @computed get currentTemperature() {
-    return this.latestReading ? this.latestReading.temperature : 0;
+    return this.isValid && this.latestReading ? this.latestReading.temperature : undefined;
   }
   @computed get currentHumidity() {
-    return this.latestReading ? this.latestReading.humidity : 0;
+    return this.isValid && this.latestReading ? this.latestReading.humidity : undefined;
   }
 
   static nextId = 0;

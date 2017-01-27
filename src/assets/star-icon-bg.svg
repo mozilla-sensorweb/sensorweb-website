@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
+    <g transform="matrix(0.84127,0,0,0.84127,9.31746,10.1587)">
+        <circle cx="65" cy="64" r="63" style="fill:url(#_Radial1);"/>
+    </g>
+    <g transform="matrix(0.819672,0,0,0.819672,11.5409,9.90164)">
+        <path d="M64,5L82.27,40.854L122.015,47.15L93.561,75.605L99.855,115.35L64,97.082L28.145,115.35L34.439,75.605L5.986,47.15L45.731,40.854L64,5Z" style="fill:white;"/>
+    </g>
+    <defs>
+        <radialGradient id="_Radial1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(63,0,0,63,65,64)"><stop offset="0%" style="stop-color:black;stop-opacity:1"/><stop offset="56%" style="stop-color:black;stop-opacity:0.796078"/><stop offset="100%" style="stop-color:black;stop-opacity:0"/></radialGradient>
+    </defs>
+</svg>

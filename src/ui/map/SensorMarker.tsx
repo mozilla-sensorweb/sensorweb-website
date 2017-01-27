@@ -29,12 +29,13 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
     return nextProps.sensor !== this.props.sensor ||
       nextProps.favorite !== this.props.favorite ||
       nextProps.sensor.currentPm !== this.props.sensor.currentPm ||
+      nextProps.sensor.latestReading !== this.props.sensor.latestReading ||
       nextProps.selected !== this.props.selected;
   }
 
   render() {
-    const pm = this.props.sensor.currentPm || 0;
-    let bgColor = d3.hsl(d3.rgb(pmToColor(pm, 'light')));
+    let pm = this.props.sensor.currentPm;
+    let bgColor = d3.hsl(d3.rgb(pmToColor(pm)));
     let shadowColor = d3.hsl(bgColor);
     shadowColor.opacity = 0.6;
 
@@ -45,8 +46,8 @@ export default class SensorMarker extends React.Component<SensorMarkerProps, {}>
         style={{backgroundColor: shadowColor}} />
       <MarkerNumberWrapper
         backgroundColor={bgColor}>
-        {pm}
-        {this.props.favorite && <img src={require<string>('../../assets/star-icon-on.svg')}/>}
+        {this.props.favorite && <img src={require<string>('../../assets/star-icon-bg.svg')}/>}
+        {pm === undefined ? '?' : pm}
       </MarkerNumberWrapper>
     </SensorMarkerStyledDiv>;
   }
@@ -85,13 +86,12 @@ const MarkerNumberWrapper = styled.span`
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
 
   & img {
-    width: 2rem;
-    height: 2rem;
+    width: 100%;
+    height: 100%;
     position: absolute;
-    top: 0.1rem;
-    left: 50%;
-    margin-left: -1rem;
-    margin-top: -1rem;
+    top: 0;
+    left: 0;
+    opacity: 0.1;
   }
 
   &::before {

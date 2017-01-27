@@ -20,8 +20,11 @@ export function getColorArray(theme: 'light'|'dark') {
   return theme === 'light' ? VALUE_COLORS_LIGHT_BG : VALUE_COLORS_DARK_BG;
 }
 
-export function pmToColor(pm: number, theme: 'light' | 'dark') {
-  const colors = getColorArray(theme);
+export function pmToColor(pm?: number) {
+  const colors = getColorArray('light');
+  if (!pm) {
+    return '#999';
+  }
   return colors[pmToIndex(pm)];
 }
 

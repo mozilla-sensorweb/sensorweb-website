@@ -140,14 +140,15 @@ const Wrapper = styled.div`
 
 
 function formatSearchResult(sr: SearchResult) {
-  const a = sr.address;
-  let s = sr.display_name;
-  if (/^zh/.test(navigator.language)) {
-    s = `${a.country}\n${a.postcode}\n${a.city || a.town || a.village}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.road}\n${a.house_number}\n${a.house}`;
-  } else {
-    s = `${a.house}\n${a.house_number} ${a.road}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.city || a.town || a.village} ${a.postcode}\n${a.country}`;
-  }
-  return s.replace(/\s+/, ' ').trim();
+  return sr.display_name;
+  // const a = sr.address;
+  // let s = sr.display_name;
+  // if (/^zh/.test(navigator.language)) {
+  //   s = `${a.country}\n${a.postcode}\n${a.city || a.town || a.village}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.road}\n${a.house_number}\n${a.house}`;
+  // } else {
+  //   s = `${a.house}\n${a.house_number} ${a.road}\n${a.suburb || a.city_district || a.neighbourhood}\n${a.city || a.town || a.village} ${a.postcode}\n${a.country}`;
+  // }
+  // return s.replace(/\s+/, ' ').trim();
 }
 
 interface SearchResult {

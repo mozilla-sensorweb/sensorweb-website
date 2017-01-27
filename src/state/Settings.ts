@@ -6,7 +6,7 @@ export interface FavoriteSensor {
 }
 
 interface JSONSettings {
-  temperatureUnits?: 'c' | 'f';
+  units?: 'metric' | 'imperial';
   favoriteSensors?: FavoriteSensor[];
 }
 
@@ -19,8 +19,8 @@ export default class Settings {
       settings = {};
     }
 
-    if (settings.temperatureUnits) {
-      this.temperatureUnits = settings.temperatureUnits;
+    if (settings.units) {
+      this.units = settings.units;
     }
     if (settings.favoriteSensors) {
       this.favoriteSensors = settings.favoriteSensors;
@@ -29,13 +29,13 @@ export default class Settings {
     // Automatically save whenever the property changes.
     autorun(() => {
       localStorage.setItem('settings', JSON.stringify({
-        temperatureUnits: this.temperatureUnits,
+        units: this.units,
         favoriteSensors: this.favoriteSensors
       }));
     });
   }
 
-  @observable temperatureUnits: 'c' | 'f' = 'c';
+  @observable units: 'metric' | 'imperial' = 'metric';
   @observable favoriteSensors: FavoriteSensor[] = [];
 
   getFavoriteSensor(sensor: Sensor) {

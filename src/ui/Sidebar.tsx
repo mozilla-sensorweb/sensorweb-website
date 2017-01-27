@@ -31,7 +31,7 @@ const SummaryBox = observer(function ({ sensor, currentLocation }:
 
   const value = sensor && sensor.currentPm || 0;
   const readingTime = sensor && sensor.latestReading && moment(sensor.latestReading.date).fromNow();
-  const color = pmToColor(value, 'light');
+  const color = pmToColor(value);
 
   return (
     <Section hidden={!sensor}>

@@ -17,11 +17,12 @@ export default class UnfavoriteModal extends React.Component<UnfavoriteModalProp
   render() {
     const settings = this.props.settings;
     return (
-      <Modal title="Unfavorite Sensor" onClose={this.cancel}>
-        <Wrapper>
-          <p>Would you like to remove this sensor from your list?</p>
-          <p style={{textAlign: 'right'}}><button onClick={this.cancel}>Cancel</button> <button onClick={this.save}>Remove</button></p>
-        </Wrapper>
+      <Modal title="Unfavorite Sensor" onClose={this.cancel}
+        buttons={[
+          <button onClick={this.cancel}>Cancel</button>,
+          <button onClick={this.save}>Remove</button>,
+        ]}>
+        <p>Would you like to remove this sensor from your list?</p>
       </Modal>
     );
   }
@@ -34,24 +35,3 @@ export default class UnfavoriteModal extends React.Component<UnfavoriteModalProp
     this.props.onClose(false);
   }
 }
-
-const Wrapper = styled.div`
-  padding: 1rem;
-
-
-  & p {
-    margin-bottom: 1rem;
-  }
-
-  & button {
-    padding: .5rem 2rem;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    font-size: larger;
-    color: #169ED4;
-    border: 1px solid #169ED4;
-    border-radius: 3px;
-    background: none;
-  }
-
-`

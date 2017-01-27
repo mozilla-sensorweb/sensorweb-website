@@ -1,4 +1,4 @@
-const { injectGlobal } = require<any>('styled-components');
+import { injectGlobal } from 'styled-components';
 
 // Our CSS includes a few global resets for ease of use:
 // - "box-sizing: border-box" is default.
@@ -46,8 +46,6 @@ body {
   user-select: none;
   overflow: hidden;
 }
-
-
 
 @font-face {
 	font-family: 'Rubik';

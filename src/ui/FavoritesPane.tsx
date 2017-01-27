@@ -4,11 +4,13 @@ import { SensorRowSummary } from './DetailsDrawer';
 import { AppState } from '../state';
 import { themed } from './theme';
 import { List, ListItem, EmptyListItem } from './lists';
+import { observer } from 'mobx-react';
 
 interface FavoritesPaneProps {
   appState: AppState;
 }
 
+@observer
 export default class FavoritesPane extends React.Component<FavoritesPaneProps, {}> {
   render() {
     const appState = this.props.appState;

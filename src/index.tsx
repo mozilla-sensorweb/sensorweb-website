@@ -27,9 +27,29 @@ import { observable } from 'mobx';
 import { config as themeConfig } from './ui/theme';
 import Toast from './ui/Toast';
 
-import TransitionGroup from 'react-addons-transition-group'
+import TransitionGroup from 'react-addons-transition-group';
+
+import moment from 'moment';
 
 //(window as any).React = React; // enable react devtools
+
+@observer
+class TimeBar extends React.Component<{ isMetric: boolean }, any> {
+  interval: number;
+  componentDidMount() {
+    this.interval = setInterval(this.forceUpdate.bind(this), 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this.interval);
+  }
+  render() {
+    let now = moment().format(this.props.isMetric ? 'H:mm' : 'h:mm a');
+    return <div style={{ padding: '0.25rem 0.5rem', fontWeight: 300, background: '#000', color: '#bbb'}}>
+      <span style={{}}>SensorWeb</span>
+      <span style={{float: 'right'}}>{now}</span>
+    </div>;
+  }
+}
 
 @renderOnResize
 @observer
@@ -55,6 +75,7 @@ class Root extends React.Component<{ appState: AppState }, ResizeState> {
         <IntlProvider locale={navigator.language}>
           <ThemeProvider theme={theme}>
             <RootDiv>
+              <TimeBar isMetric={appState.settings.units === 'metric'} />
               <TransitionGroup>{appState.currentToast && <Toast>{appState.currentToast}</Toast>}</TransitionGroup>
               {appState.showingSettingsPanel && <SettingsModal settings={appState.settings} onClose={this.onCloseSettings} />}
               {appState.isFavoritingSensor && appState.selectedSensor &&

@@ -44,6 +44,20 @@ function proportionRect(p1: ClientRect, c1: ClientRect, p2: ClientRect) {
   } as ClientRect;
 }
 
+// function freezeStyles(el: HTMLElement, cloned: HTMLElement) {
+//   const computedA: any = getComputedStyle(el);
+//   const computedB: any = getComputedStyle(cloned);
+//   for (let key of ['fontSize', 'margin', 'padding', 'display']) {
+//     if (computedA[key] !== computedB[key]) {
+//       cloned.style[key as any] = computedA[key];
+//     }
+//   }
+//   for (let i = 0; i < el.children.length; i++) {
+//     freezeStyles(el.children[i] as HTMLElement, cloned.children[i] as HTMLElement);
+//   }
+//   return cloned;
+// }
+
 
 interface MorphTweenProps {
   percent: number;
@@ -71,10 +85,6 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     aMorphs.set('ROOT', this.a);
     bMorphs.set('ROOT', this.b);
 
-    // XXX
-    this.c.innerHTML = '';
-
-
     interface Anim {
       key: string;
       parentKey: string;
@@ -86,6 +96,7 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
 
     if (this.props.percent === 0 || this.props.percent === 1) {
       this.cachedRects.clear();
+      this.c.innerHTML = '';
     }
 
     allKeys.forEach((key: string) => {
@@ -138,8 +149,8 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
         opacity: startOpacity,
       };
       const to: any = {
-        x: rectB!.left - rectParentB.left,
-        y: rectB!.top - rectParentB.top,
+        x: rectB!.left - rectParentB.left - parseInt(getComputedStyle(parentB).borderLeftWidth || '0'),
+        y: rectB!.top - rectParentB.top - parseInt(getComputedStyle(parentB).borderTopWidth || '0'),
         width: rectB!.width,
         height: rectB!.height,
         opacity: endOpacity,
@@ -159,7 +170,7 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
 
       let el = this.c.querySelector(`[data-morph-key="${key}-C"]`) as HTMLElement | undefined;
       if (!el) {
-        el = (b || a)!.cloneNode(true) as HTMLElement;
+        el = (b || a)!.cloneNode(true) as HTMLElement//freezeStyles((b || a)! as HTMLElement, (b || a)!.cloneNode(true) as HTMLElement);
         el.classList.add('hideMorphing');
         el.setAttribute('data-morph-key', key + '-C');
         el.style.position = 'absolute';
