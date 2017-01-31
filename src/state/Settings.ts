@@ -42,6 +42,8 @@ export default class Settings {
     return this.favoriteSensors.find(fav => fav.sensorId === sensor.id);
   }
 
+  MAX_FAVORITE_NAME_LENGTH = 40;
+
   favoriteSensor(sensor: Sensor, name: string) {
     this.favoriteSensors.push({
       sensorId: sensor.id,

@@ -14,7 +14,8 @@ export enum Tabs {
 };
 
 export class AppState {
-  @observable showingSettingsPanel: boolean = false;
+  @observable showingSettingsPanel = false;
+  @observable editingFavorites = false;
   @observable currentGpsLocation?: Location;
   @observable selectedSensor?: Sensor;
   @observable knownSensors = new ObservableMap<Sensor>();

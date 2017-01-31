@@ -2,6 +2,8 @@ import * as React from 'react';
 const { default: styled, css } = require<any>('styled-components');
 import { themed } from './theme';
 
+import SpriteIcon, { Icon } from './SpriteIcon';
+
 interface TabbedInterfaceProps {
   selectedTab: number;
   labels: any[];
@@ -28,10 +30,8 @@ export default class TabbedInterface extends React.Component<TabbedInterfaceProp
             <TabButton
               isCurrent={currentPaneIndex === index}
               onClick={() => this.props.onSelectedTab(index)}>
-                <span style={{
-                  backgroundPositionX: (index * -100) + '%',
-                  backgroundPositionY: (currentPaneIndex === index ? -100 : 0) + '%',
-                }}>{label}</span></TabButton>
+              <SpriteIcon icon={index} title={label} selected={currentPaneIndex === index} />
+            </TabButton>
           ))}
         </Buttons>
       </Wrapper>
@@ -89,15 +89,8 @@ const TabButton = styled.div`
 
   display: flex;
 
-  & span {
-    text-indent: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    width: 3rem;
-    height: 3rem;
+  & > div {
     margin: auto;
-    background: url('${require<string>('../assets/tab-sprites.svg')}') 0 0;
-    background-size: calc(3 * 100%) calc(2 * 100%);
   }
 
   ${(props: any) => props.isCurrent ? `

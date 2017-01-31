@@ -11,7 +11,7 @@ import { observable, action } from 'mobx';
 import { Motion, spring } from 'react-motion';
 import { themed } from './theme';
 import { WeatherSummary } from './weather';
-
+import SpriteIcon, { Icon } from './SpriteIcon';
 import moment from 'moment';
 
 interface DetailsDrawerProps {
@@ -41,7 +41,7 @@ const FormattedTemperature = inject('settings')(observer((props: { value: any, s
  * A row in a list showing the details for a given sensor in brief.
  */
 
-const FaceIcon = ({ pm, size }: { size: string, pm?: number }) => (
+export const FaceIcon = ({ pm, size }: { size: string, pm?: number }) => (
   <img
     data-morph-key="FaceIcon"
     className="icon"
@@ -262,7 +262,7 @@ export default class DetailsDrawer extends React.Component<DetailsDrawerProps, a
 
             <Flex column style={{padding: '0.5rem'}}>
               <div>
-                <img style={{width: '4rem', height: '3rem', verticalAlign: '-70%', paddingRight: '1rem'}} src={require<string>('../assets/collapse-icon.svg')} />
+                <SpriteIcon icon={Icon.Collapse} />
                 <span data-morph-key="favname" style={{fontSize: '1.5rem'}}>{favorite && favorite.name || 'Sensor'}</span>
               </div>
               <Flex row valign="center" style={{marginBottom: '1rem'}}>
@@ -335,17 +335,18 @@ const iconCss = css`
     background: ${themed.chromeActiveBackground};
   }
 
-  & > img {
-    width: 3rem;
-    height: 3rem;
-    padding: 0.5rem;
+  & > .icon {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    margin: 0.5rem;
   }
-  & > span {
+  & > .label {
     display: none;
     padding: 0.5rem;
   }
   ${(props: any) => props.expanded && css`
-    & > span {
+    & > .label {
       display: block;
     }
     flex-grow: 1;
@@ -355,13 +356,13 @@ const iconCss = css`
 `
 
 
-export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) => {
+export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings, overrideName?: string }) => {
   const sensor = props.sensor;
   const favorite = props.settings!.getFavoriteSensor(sensor);
   return <Flex row valign="center">
     <FaceIcon size="3rem" pm={sensor.currentPm} />
     <Flex column grow={3} style={{ marginLeft: '1rem' }}>
-      <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
+      <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{props.overrideName || (favorite && favorite.name) || 'Sensor'}</span></div>
       <QualityText sensor={sensor} />
     </Flex>
    <WeatherSummary units={props.settings.units} location={sensor.location} />
@@ -370,8 +371,8 @@ export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) 
 
 const ShareIcon = styled((props: any) => (
   <div data-morph-key="share" className={props.className}>
-    <img data-morph-key="share-icon" src={require<string>('../assets/share-icon.svg')} />
-    <span>{props.children}</span>
+    <SpriteIcon className="icon" data-morph-key="share-icon" icon={Icon.Share} />
+    <span className="label">{props.children}</span>
   </div>
 ))`
   ${iconCss}
@@ -379,8 +380,8 @@ const ShareIcon = styled((props: any) => (
 
 const FavoriteIcon = styled((props: any) => (
   <div data-morph-key="favorite" className={props.className} onClick={props.onClick}>
-    <img data-morph-key="favorite-icon" src={props.isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')} />
-    <span>{props.children}</span>
+    <SpriteIcon className="icon" data-morph-key="favorite-icon" icon={Icon.Favorited} selected={props.isFavorited} />
+    <span className="label">{props.children}</span>
   </div>
 ))`
   ${iconCss}
