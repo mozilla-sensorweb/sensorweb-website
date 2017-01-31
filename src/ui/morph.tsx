@@ -79,6 +79,33 @@ export function decompose([a, b, c, d, e, f]: Matrix) {
 }
 
 
+function getKeyedElements(container: HTMLElement) {
+  const keys = [];
+  const keyToElement = new Map<string, HTMLElement>();
+  const queue: HTMLElement[] = [container];
+  const queueWithinKey: (string | null)[] = [null];
+  while (queue.length) {
+    const current = queue.shift()!;
+    const key = current.getAttribute('data-morph-key');
+    const isInKeyedElement = queueWithinKey.shift()! || key;
+
+    if (key) {
+      if (keys.indexOf(key) === -1) {
+        keys.push(key);
+      }
+      keyToElement.set(key, current);
+      //current.style.visibility = 'visible';
+    } else if (!isInKeyedElement) {
+      current.style.visibility = 'hidden';
+    }
+    for (let i = 0; i < current.children.length; i++) {
+      queue.push(current.children[i] as HTMLElement);
+      queueWithinKey.push(key || isInKeyedElement);
+    }
+  }
+  return keyToElement;
+}
+
 
 export function multiply([a1, b1, c1, d1, e1, f1]: Matrix, [a2, b2, c2, d2, e2, f2]: Matrix) {
   return [
@@ -144,6 +171,7 @@ function getUntransformedClientRect(el?: HTMLElement) {
   if (!el) {
     return undefined;
   }
+
   let offsetLeft = 0;
   let offsetTop = 0;
   let width = el.offsetWidth;
@@ -172,100 +200,55 @@ interface MorphTweenProps {
 }
 export class MorphTween extends React.Component<MorphTweenProps, any> {
   el: HTMLElement;
+  startEl: HTMLElement;
+  endEl: HTMLElement;
+  startAnimEl: HTMLElement;
+  endAnimEl: HTMLElement;
 
-  get startEl() {
-    return this.el.children[0]! as HTMLElement;
-  }
+  cachedRects = new Map<string, ClientRect>();
 
-  get endEl() {
-    return this.el.children[1]! as HTMLElement;
+  getCachedRect(key: string, which: 'start' | 'end', el?: HTMLElement) {
+    if (!el) {
+      return undefined;
+    }
+    let rect = this.cachedRects.get(key + which);
+    if (!rect) {
+      rect = getUntransformedClientRect(el);
+      this.cachedRects.set(key + which, rect);
+    }
+    return rect;
   }
 
   componentDidUpdate() {
+    let startAnimKeyedElements = getKeyedElements(this.startAnimEl);
+    let endAnimKeyedElements = getKeyedElements(this.endAnimEl);
 
-    function getKeyedElements(container: HTMLElement) {
-      const keys = [];
-      const keyToElements = new Map<string, HTMLElement>();
-      const unkeyedElements = [];
-      const queue: HTMLElement[] = [container];
-      const queueWithinKey: (string | null)[] = [null];
-      while (queue.length) {
-        const current = queue.shift()!;
-        const key = current.getAttribute('data-morph-key');
-        const isInKeyedElement = queueWithinKey.shift()! || key;
-
-        if (key) {
-          if (keys.indexOf(key) === -1) {
-            keys.push(key);
-          }
-          keyToElements.set(key, current);
-        } else if (!isInKeyedElement) {
-          unkeyedElements.push(current);
-        }
-        for (let i = 0; i < current.children.length; i++) {
-          queue.push(current.children[i] as HTMLElement);
-          queueWithinKey.push(key || isInKeyedElement);
-        }
-      }
-      return {
-        keyToElements,
-        unkeyedElements
-      }
-    }
-
-    let starter = getKeyedElements(this.startEl);
-    let ender = getKeyedElements(this.endEl);
-
-    let keys = _.uniq([...starter.keyToElements.keys(), ...ender.keyToElements.keys()]);
+    let keys = _.uniq([...startAnimKeyedElements.keys(), ...endAnimKeyedElements.keys()]);
 
     const t = this.props.percent;
 
-    function clobber(el: HTMLElement, property: any, opacity: number) {
-      let expando = (el as any)._temp || ((el as any)._temp = {});
-      if (!expando[property]) {
-        expando[property] = getComputedStyle(el)[property];
-      }
-      const m = /rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*?(.*?)\)/.exec(expando[property]) || [];
-      const v = `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${opacity * parseFloat(m[4] || '1')})`;
-      el.style[property] = v;
+    if (t === 0 || t === 1) {
+      this.cachedRects.clear();
     }
-
-    function fakeOpacity(el: HTMLElement, opacity: number) {
-      ['borderLeftColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor',
-       'color', 'backgroundColor'].forEach((prop) => {
-         clobber(el, prop, opacity);
-       })
-    }
-
-    // starter.unkeyedElements.forEach((el) => {
-    //   //el.style.border = '1px solid red'
-    //   let opacity = Math.max(0, Math.min(1, rescale(t, 0, 1, 1, -1)));
-    //   fakeOpacity(el, opacity);
-    //   //el.style.filter = `opacity(${opacity})`;
-    // });
-    // ender.unkeyedElements.forEach((el) => {
-    //   let opacity = Math.max(0, Math.min(1, rescale(t, 0, 1, 1, -1)));
-    //   fakeOpacity(el, opacity);
-    //   //el.style.filter = `opacity(${opacity})`;
-    // });
 
     keys.forEach((key) => {
-      let startEl = starter.keyToElements.get(key);
-      let endEl = ender.keyToElements.get(key);
+      let startAnimEl = startAnimKeyedElements.get(key);
+      let endAnimEl = endAnimKeyedElements.get(key);
 
+      startAnimEl && (startAnimEl.style.transformOrigin = '0 0');
+      endAnimEl && (endAnimEl.style.transformOrigin = '0 0');
+      startAnimEl && (startAnimEl.style.visibility = 'visible');
+      endAnimEl && (endAnimEl.style.visibility = 'visible');
 
-      startEl && (startEl.style.transformOrigin = '0 0');
-      endEl && (endEl.style.transformOrigin = '0 0');
-
-      let fromRect = getUntransformedClientRect(startEl) || getUntransformedClientRect(endEl);
-      let toRect = getUntransformedClientRect(endEl) || getUntransformedClientRect(startEl);
+      let fromRect = this.getCachedRect(key, 'start', startAnimEl) || this.getCachedRect(key, 'end', endAnimEl)!;
+      let toRect = this.getCachedRect(key, 'end', endAnimEl) || this.getCachedRect(key, 'start', startAnimEl)!;
 
       if (!fromRect || !toRect) {
         return;
       }
 
-      startEl && (startEl.style.transform = matrixToString(decompose(multiply(
-        this.computeRelativeParentInverse(startEl),
+      startAnimEl && (startAnimEl.style.transform = matrixToString(decompose(multiply(
+        this.computeRelativeParentInverse(startAnimEl),
         compose(interpolateDecomposedTransforms(decompose(IDENTITY), decompose([
         toRect.width / fromRect.width, 0, 0,
         toRect.height / fromRect.height,
@@ -273,11 +256,11 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
         toRect.top - fromRect.top,
       ]), t))))));
 
-      startEl && (startEl.style.opacity = (1 - t)+'');
-      endEl && (endEl.style.opacity = t+'');
+      startAnimEl && (startAnimEl.style.opacity = (1 - t) + '');
+      endAnimEl && (endAnimEl.style.opacity = t+'');
 
-      endEl && (endEl.style.transform = matrixToString(decompose(multiply(
-        this.computeRelativeParentInverse(endEl),
+      endAnimEl && (endAnimEl.style.transform = matrixToString(decompose(multiply(
+        this.computeRelativeParentInverse(endAnimEl),
         compose(interpolateDecomposedTransforms(decompose([
         fromRect.width / toRect.width, 0, 0,
         fromRect.height / toRect.height,
@@ -287,11 +270,17 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     });
   }
 
+  componentDidMount() {
+    this.componentDidUpdate();
+  }
+
 
   computeRelativeParentInverse(el: HTMLElement) {
     const matrix = invert(getCumulativeTransformMatrix(el.parentElement!, this.el));
-    matrix[4] -= parseFloat(getComputedStyle(el.parentElement!).borderLeftWidth || '0');
-    matrix[5] -= parseFloat(getComputedStyle(el.parentElement!).borderTopWidth || '0');
+    if (!/Firefox/.test(navigator.userAgent)) {
+      matrix[4] -= parseFloat(getComputedStyle(el.parentElement!).borderLeftWidth || '0');
+      matrix[5] -= parseFloat(getComputedStyle(el.parentElement!).borderTopWidth || '0');
+    }
     matrix[4] += -el.offsetLeft + el.offsetLeft * matrix[0];
     matrix[5] += -el.offsetTop + el.offsetTop * matrix[3];
     return matrix;
@@ -301,17 +290,27 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     const t = this.props.percent;
     const c = React.Children.toArray(this.props.children);
     return <div ref={el => this.el = el} style={{ position: 'relative', flexGrow: 1 }}>
-      <div style={{
+      <div ref={el => this.startEl = el} className="hideMorphing" style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
-        opacity: lerp(1, 0, t),
+        opacity: t > 0.5 ? 0 : rescale(t, 0, 0.5, 1, 0),
         pointerEvents: t === 0 ? 'all' : 'none'//visibility: t === 0 ? 'visible' : 'hidden'
       }}>{c[0]}</div>
-      <div style={{
+      <div ref={el => this.endEl = el} className="hideMorphing" style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
-        opacity: lerp(0, 1, t),
+        opacity: t < 0.5 ? 0 : rescale(t, 0.5, 1, 0, 1),
         pointerEvents: t === 1 ? 'all' : 'none'
+      }}>{c[1]}</div>
+      <div ref={el => this.startAnimEl = el} style={{
+        position: 'absolute',
+        top: 0, left: 0, width: '100%', height: '100%',
+        pointerEvents: 'none'
+      }}>{c[0]}</div>
+      <div ref={el => this.endAnimEl = el} style={{
+        position: 'absolute',
+        top: 0, left: 0, width: '100%', height: '100%',
+        pointerEvents: 'none'
       }}>{c[1]}</div>
     </div>;
   }
@@ -320,5 +319,8 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
 injectGlobal`
   span[data-morph-key] {
     display: inline-block;
+  }
+  .hideMorphing [data-morph-key] {
+    visibility: hidden;
   }
 `
