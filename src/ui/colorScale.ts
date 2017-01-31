@@ -22,7 +22,7 @@ export function getColorArray(theme: 'light'|'dark') {
 
 export function pmToColor(pm?: number) {
   const colors = getColorArray('light');
-  if (!pm) {
+  if (pm === undefined) {
     return '#999';
   }
   return colors[pmToIndex(pm)];
