@@ -364,7 +364,7 @@ export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) 
       <div><span data-morph-key="favname" style={{fontSize: '1.3rem'}}>{favorite && favorite.name || 'Sensor'}</span></div>
       <QualityText sensor={sensor} />
     </Flex>
-    {/*<WeatherSummary icon={iconUrl} temp={temp} humidity={humidity} summary={summary} />*/}
+   <WeatherSummary units={props.settings.units} location={sensor.location} />
   </Flex>;
 }
 

@@ -79,7 +79,7 @@ export function decompose([a, b, c, d, e, f]: Matrix) {
 }
 
 
-function getKeyedElements(container: HTMLElement) {
+function getKeyedElements(container: HTMLElement, hideNonKeyed: boolean) {
   const keys = [];
   const keyToElement = new Map<string, HTMLElement>();
   const queue: HTMLElement[] = [container];
@@ -95,7 +95,7 @@ function getKeyedElements(container: HTMLElement) {
       }
       keyToElement.set(key, current);
       //current.style.visibility = 'visible';
-    } else if (!isInKeyedElement) {
+    } else if (!isInKeyedElement && hideNonKeyed) {
       current.style.visibility = 'hidden';
     }
     for (let i = 0; i < current.children.length; i++) {
@@ -139,6 +139,9 @@ export function parseMatrixTransformString(transform: string) {
 
 export function getTransformMatrix(node: HTMLElement) {
   const style = getComputedStyle(node);
+  if (!style) {
+    return IDENTITY; // XXX
+  }
   const transform = style.transform;
 
   if (!transform || transform === 'none') {
@@ -167,31 +170,6 @@ export function getCumulativeTransformMatrix(node: HTMLElement | null, root: HTM
   return matrix;
 }
 
-function getUntransformedClientRect(el?: HTMLElement) {
-  if (!el) {
-    return undefined;
-  }
-
-  let offsetLeft = 0;
-  let offsetTop = 0;
-  let width = el.offsetWidth;
-  let height = el.offsetHeight;
-  do {
-    offsetLeft += el.offsetLeft;
-    offsetTop += el.offsetTop;
-  } while ((el = el.offsetParent as HTMLElement));
-
-  if (width === 0 && height === 0) {
-    return undefined;
-  }
-
-  return {
-    left: offsetLeft,
-    top: offsetTop,
-    width,
-    height,
-  } as ClientRect;
-}
 function rescale(val: number, a: number, b: number, a2: number, b2: number) {
   return (val - a) / (b - a) * (b2 - a2) + a2;
 }
@@ -213,15 +191,17 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     }
     let rect = this.cachedRects.get(key + which);
     if (!rect) {
-      rect = getUntransformedClientRect(el);
+      rect = el.getBoundingClientRect();
       this.cachedRects.set(key + which, rect);
     }
     return rect;
   }
 
   componentDidUpdate() {
-    let startAnimKeyedElements = getKeyedElements(this.startAnimEl);
-    let endAnimKeyedElements = getKeyedElements(this.endAnimEl);
+    let startKeyedElements = getKeyedElements(this.startEl, false);
+    let endKeyedElements = getKeyedElements(this.endEl, false);
+    let startAnimKeyedElements = getKeyedElements(this.startAnimEl, true);
+    let endAnimKeyedElements = getKeyedElements(this.endAnimEl, true);
 
     let keys = _.uniq([...startAnimKeyedElements.keys(), ...endAnimKeyedElements.keys()]);
 
@@ -232,6 +212,8 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
     }
 
     keys.forEach((key) => {
+      let startEl = startKeyedElements.get(key);
+      let endEl = endKeyedElements.get(key);
       let startAnimEl = startAnimKeyedElements.get(key);
       let endAnimEl = endAnimKeyedElements.get(key);
 
@@ -240,15 +222,19 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
       startAnimEl && (startAnimEl.style.visibility = 'visible');
       endAnimEl && (endAnimEl.style.visibility = 'visible');
 
-      let fromRect = this.getCachedRect(key, 'start', startAnimEl) || this.getCachedRect(key, 'end', endAnimEl)!;
-      let toRect = this.getCachedRect(key, 'end', endAnimEl) || this.getCachedRect(key, 'start', startAnimEl)!;
+      let fromRect = this.getCachedRect(key, 'start', startEl) || this.getCachedRect(key, 'end', endEl)!;
+      let toRect = this.getCachedRect(key, 'end', endEl) || this.getCachedRect(key, 'start', startEl)!;
 
       if (!fromRect || !toRect) {
         return;
       }
 
+      if (key === 'favorite-icon') {
+        console.log('fav', fromRect, toRect);
+      }
+
       startAnimEl && (startAnimEl.style.transform = matrixToString(decompose(multiply(
-        this.computeRelativeParentInverse(startAnimEl),
+        this.computeRelativeParentInverse(startAnimEl, key),
         compose(interpolateDecomposedTransforms(decompose(IDENTITY), decompose([
         toRect.width / fromRect.width, 0, 0,
         toRect.height / fromRect.height,
@@ -257,10 +243,10 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
       ]), t))))));
 
       startAnimEl && (startAnimEl.style.opacity = (1 - t) + '');
-      endAnimEl && (endAnimEl.style.opacity = t+'');
+      endAnimEl && (endAnimEl.style.opacity = t + '');
 
       endAnimEl && (endAnimEl.style.transform = matrixToString(decompose(multiply(
-        this.computeRelativeParentInverse(endAnimEl),
+        this.computeRelativeParentInverse(endAnimEl, key),
         compose(interpolateDecomposedTransforms(decompose([
         fromRect.width / toRect.width, 0, 0,
         fromRect.height / toRect.height,
@@ -275,14 +261,15 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
   }
 
 
-  computeRelativeParentInverse(el: HTMLElement) {
-    const matrix = invert(getCumulativeTransformMatrix(el.parentElement!, this.el));
+  computeRelativeParentInverse(el: HTMLElement, key: string) {
+    let matrix = invert(getCumulativeTransformMatrix(el.parentElement!, this.el));
+    let left = el.offsetLeft;
+    let border = parseFloat(getComputedStyle(el.parentElement!).borderLeftWidth || '0');
+
     if (!/Firefox/.test(navigator.userAgent)) {
-      matrix[4] -= parseFloat(getComputedStyle(el.parentElement!).borderLeftWidth || '0');
-      matrix[5] -= parseFloat(getComputedStyle(el.parentElement!).borderTopWidth || '0');
+      left += border;
     }
-    matrix[4] += -el.offsetLeft + el.offsetLeft * matrix[0];
-    matrix[5] += -el.offsetTop + el.offsetTop * matrix[3];
+    matrix[4] += left * matrix[0] - left;
     return matrix;
   }
 

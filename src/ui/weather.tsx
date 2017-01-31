@@ -34,9 +34,25 @@ interface OpenWeatherMapJson {
 
 type Loc = { latitude: number, longitude: number };
 
+const cachedWeather = new Map<string, OpenWeatherMapJson>();
+setInterval(() => {
+  console.log('clearing weather cache');
+  cachedWeather.clear();
+}, 60000);
+
+function locationToCachableString(loc: Loc) {
+  return loc.latitude.toFixed(2) + ',' + loc.longitude.toFixed(2);
+}
+
 async function fetchWeather(location: Loc): Promise<OpenWeatherMapJson> {
+  let cacheKey = locationToCachableString(location);
+  if (cachedWeather.has(cacheKey)) {
+    return cachedWeather.get(cacheKey)!;
+  }
   const url = `http://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=172c63f7cadd6363539161affd0513d8&callback=?`;
-  return await fetchJsonP<OpenWeatherMapJson>(url);
+  let result = await fetchJsonP<OpenWeatherMapJson>(url);
+  cachedWeather.set(cacheKey, result);
+  return result;
 }
 
 interface WeatherSummaryProps {
@@ -92,7 +108,7 @@ export class WeatherSummary extends React.Component<WeatherSummaryProps, {}> {
           <i className={iconClassName}
             alt={conditions}
             title={conditions} />
-          <div>
+          <div style={{marginLeft: '0.5rem'}}>
             <div className="temp">
               {temp}
             </div>
