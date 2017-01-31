@@ -61,16 +61,15 @@ const QualityText = styled(({ sensor, style, className }: { sensor: Sensor, styl
   let pm = sensor.currentPm;
 
   return <div
-    data-morph-key="QualityText"
     className={className}
-    style={{...style, color: pmToColor(pm)}}>{
+    style={{...style, color: pmToColor(pm)}}><span data-morph-key="QualityText">{
       pm === undefined ?
         (sensor.latestReading ? 'No Data for ' + moment(sensor.latestReading.date).fromNow(true) : 'No Data') :
       pm < 36 ? 'Great Air Quality' :
       pm < 59 ? 'Moderate Quality' :
       'Bad Air Quality'
     }
-  </div>;
+  </span></div>;
 })`
   text-transform: uppercase;
 `;
@@ -371,8 +370,8 @@ export const SensorRowSummary = (props: { sensor: Sensor, settings: Settings }) 
 
 const ShareIcon = styled((props: any) => (
   <div data-morph-key="share" className={props.className}>
-    <img data-morph-key="share-image" src={require<string>('../assets/share-icon.svg')} />
-    <span data-morph-key="share-label">{props.children}</span>
+    <img data-morph-key="share-icon" src={require<string>('../assets/share-icon.svg')} />
+    <span>{props.children}</span>
   </div>
 ))`
   ${iconCss}
@@ -381,7 +380,7 @@ const ShareIcon = styled((props: any) => (
 const FavoriteIcon = styled((props: any) => (
   <div data-morph-key="favorite" className={props.className} onClick={props.onClick}>
     <img data-morph-key="favorite-icon" src={props.isFavorited ? require<string>('../assets/star-icon-on.svg') : require<string>('../assets/star-icon.svg')} />
-    <span data-morph-key="favorite-image">{props.children}</span>
+    <span>{props.children}</span>
   </div>
 ))`
   ${iconCss}

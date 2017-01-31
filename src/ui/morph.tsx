@@ -2,252 +2,322 @@ import * as React from 'react';
 import * as _ from 'lodash';
 const { injectGlobal } = require<any>('styled-components');
 
-function lerp(start: number, end: number, percent: number) {
-  return start + percent * (end - start);
+function lerp(a: number, b: number, t: number) {
+  return a + t * (b - a);
 }
 
-
-function parseFontWeight(s: string) {
-  return parseInt(s === 'bold' ? '700' : s === 'normal' ? '400' : s);
+interface DecomposedMatrix {
+  rotate: number;
+  scaleX: number;
+  scaleY: number;
+  skewX: number;
+  skewY: number;
+  translateX: number;
+  translateY: number;
 }
 
-function nearestCorrespondingParentKeys(node?: HTMLElement | null) {
-  if (!node) {
-    return [];
+type Matrix = number[];
+
+function matrixToString(x: DecomposedMatrix) {
+  return `translate(${x.translateX}px, ${x.translateY}px) rotate(${x.rotate}rad) ` +
+         `skew(${x.skewX}rad, ${x.skewY}rad) scale(${x.scaleX}, ${x.scaleY})`;
+}
+
+function interpolateDecomposedTransforms(a: DecomposedMatrix, b: DecomposedMatrix, t: number) {
+  return {
+    rotate: lerp(a.rotate, b.rotate, t),
+    scaleX: lerp(a.scaleX, b.scaleX, t),
+    scaleY: lerp(a.scaleY, b.scaleY, t),
+    skewX: lerp(a.skewX, b.skewX, t),
+    skewY: lerp(a.skewY, b.skewY, t),
+    translateX: lerp(a.translateX, b.translateX, t),
+    translateY: lerp(a.translateY, b.translateY, t),
+  };
+}
+
+const IDENTITY = [1, 0, 0, 1, 0, 0];
+
+function compose(x: DecomposedMatrix) {
+  const translation = [1, 0, 0, 1, x.translateX, x.translateY];
+  const scale = [x.scaleX, 0, 0, x.scaleY, 0, 0];
+  const rotation = [Math.cos(x.rotate), Math.sin(x.rotate),
+                    -Math.sin(x.rotate), Math.cos(x.rotate), 0, 0];
+  const shear = [1, Math.tan(x.skewY), Math.tan(x.skewX), 1, 0, 0];
+  let mat = IDENTITY;
+  mat = multiply(mat, translation);
+  mat = multiply(mat, scale);
+  mat = multiply(mat, shear);
+  mat = multiply(mat, rotation);
+  return mat;
+}
+// http://frederic-wang.fr/decomposition-of-2d-transform-matrices.html
+export function decompose([a, b, c, d, e, f]: Matrix) {
+  const determinant = (a * d) - (b * c);
+  let result: DecomposedMatrix = {} as DecomposedMatrix;
+  if (a !== 0 || b !== 0) {
+    const r = Math.sqrt(a * a + b * b);
+    result.rotate = b > 0 ? Math.acos(a / r) : -Math.acos(a / r);
+    result.scaleX = r;
+    result.scaleY = determinant / r;
+    result.skewX = Math.atan((a * c + b * d) / (r * r));
+    result.skewY = 0;
+  } else if (c !== 0 || d !== 0) {
+    const s = Math.sqrt(c * c + d * d);
+    result.rotate = (Math.PI / 2 - (d > 0 ? Math.acos(-c / s) : -Math.acos(c / s)));
+    result.scaleX = determinant / s;
+    result.scaleY = s;
+    result.skewX = 0;
+    result.skewY = Math.atan((a * c + b * d) / (s * s));
+  } else {
+    result.scaleX = 0;
+    result.scaleY = 0;
   }
-  let parents = [];
-  while ((node = node.parentElement)) {
-    // Because of an insanely stupid WebKit bug, we can't use `.dataset` to reliably access the property.
-    // https://bugs.webkit.org/show_bug.cgi?id=161454
-    if (node.getAttribute('data-morph-key')) {
-      parents.unshift(node.getAttribute('data-morph-key')!);
+  result.translateX = e;
+  result.translateY = f;
+
+  return result;
+}
+
+
+
+export function multiply([a1, b1, c1, d1, e1, f1]: Matrix, [a2, b2, c2, d2, e2, f2]: Matrix) {
+  return [
+    (a1 * a2) + (c1 * b2),      // a
+    (b1 * a2) + (d1 * b2),      // b
+    (a1 * c2) + (c1 * d2),      // c
+    (b1 * c2) + (d1 * d2),      // d
+    (a1 * e2) + (c1 * f2) + e1, // e
+    (b1 * e2) + (d1 * f2) + f1  // f
+  ];
+}
+
+export function invert([a, b, c, d, e, f]: Matrix) {
+  const determinant = (a * d) - (c * b);
+  return [
+    d / determinant,
+    b / -determinant,
+    c / -determinant,
+    a / determinant,
+    ((c * f) - (e * d)) / determinant,
+    ((e * b) - (a * f)) / determinant
+  ];
+}
+export function parseMatrixTransformString(transform: string) {
+  if (transform.slice(0, 7) !== 'matrix(') {
+    throw new Error(`Could not parse transform string (${transform})`);
+  }
+
+  return transform.slice(7, -1).split(' ').map(parseFloat);
+}
+
+export function getTransformMatrix(node: HTMLElement) {
+  const style = getComputedStyle(node);
+  const transform = style.transform;
+
+  if (!transform || transform === 'none') {
+    return IDENTITY;
+  }
+
+  const origin = style.transformOrigin!.split(' ').map(parseFloat);
+  let matrix = parseMatrixTransformString(transform!);
+  // compensate for the transform origin (we want to express everything in [0,0] terms)
+  matrix = multiply([1, 0, 0, 1, origin[0], origin[1]], matrix);
+  matrix = multiply(matrix, [1, 0, 0, 1, -origin[0], -origin[1]]);
+  return matrix;
+}
+export function getCumulativeTransformMatrix(node: HTMLElement | null, root: HTMLElement) {
+  let matrix = [1, 0, 0, 1, 0, 0];
+  while (node) {
+    const parentMatrix = getTransformMatrix(node);
+    if (parentMatrix) {
+      matrix = multiply(parentMatrix, matrix);
+    }
+    node = node.parentElement;
+    if (node === root) {
+      break;
     }
   }
-  return parents;
+  return matrix;
 }
 
-function keyedElements(root: HTMLElement) {
-  const els = root.querySelectorAll('[data-morph-key]');
-  const ret = new Map<string, HTMLElement>();
-  for (let i = 0; i < els.length; i++) {
-    const el = els[i] as HTMLElement;
-    ret.set(el.getAttribute('data-morph-key')!, el);
+function getUntransformedClientRect(el?: HTMLElement) {
+  if (!el) {
+    return undefined;
   }
-  return ret;
-}
-function proportionRect(p1: ClientRect, c1: ClientRect, p2: ClientRect) {
+  let offsetLeft = 0;
+  let offsetTop = 0;
+  let width = el.offsetWidth;
+  let height = el.offsetHeight;
+  do {
+    offsetLeft += el.offsetLeft;
+    offsetTop += el.offsetTop;
+  } while ((el = el.offsetParent as HTMLElement));
+
+  if (width === 0 && height === 0) {
+    return undefined;
+  }
+
   return {
-    left: p2.left + (c1.left - p1.left) / p1.width * p2.width,
-    top: p2.top + (c1.top - p1.top) / p1.height * p2.height,
-    width: c1.width,
-    height: c1.height
+    left: offsetLeft,
+    top: offsetTop,
+    width,
+    height,
   } as ClientRect;
 }
-
-// function freezeStyles(el: HTMLElement, cloned: HTMLElement) {
-//   const computedA: any = getComputedStyle(el);
-//   const computedB: any = getComputedStyle(cloned);
-//   for (let key of ['fontSize', 'margin', 'padding', 'display']) {
-//     if (computedA[key] !== computedB[key]) {
-//       cloned.style[key as any] = computedA[key];
-//     }
-//   }
-//   for (let i = 0; i < el.children.length; i++) {
-//     freezeStyles(el.children[i] as HTMLElement, cloned.children[i] as HTMLElement);
-//   }
-//   return cloned;
-// }
-
-
+function rescale(val: number, a: number, b: number, a2: number, b2: number) {
+  return (val - a) / (b - a) * (b2 - a2) + a2;
+}
 interface MorphTweenProps {
   percent: number;
 }
 export class MorphTween extends React.Component<MorphTweenProps, any> {
-  a: HTMLElement;
-  b: HTMLElement;
-  c: HTMLElement;
+  el: HTMLElement;
 
-  cachedRects = new Map<HTMLElement, ClientRect>();
+  get startEl() {
+    return this.el.children[0]! as HTMLElement;
+  }
 
-  getRect(el: HTMLElement) {
-    let rect = this.cachedRects.get(el);
-    if (!rect) {
-      rect = el.getBoundingClientRect();
-      this.cachedRects.set(el, rect);
-    }
-    return rect;
+  get endEl() {
+    return this.el.children[1]! as HTMLElement;
   }
 
   componentDidUpdate() {
-    const aMorphs = keyedElements(this.a);
-    const bMorphs = keyedElements(this.b);
-    const allKeys = _.uniq([...aMorphs.keys(), ...bMorphs.keys()]);
-    aMorphs.set('ROOT', this.a);
-    bMorphs.set('ROOT', this.b);
 
-    interface Anim {
-      key: string;
-      parentKey: string;
-      el: HTMLElement;
-      from: any;
-      to: any;
-    }
-    const animMap = new Map<string, Anim>();
+    function getKeyedElements(container: HTMLElement) {
+      const keys = [];
+      const keyToElements = new Map<string, HTMLElement>();
+      const unkeyedElements = [];
+      const queue: HTMLElement[] = [container];
+      const queueWithinKey: (string | null)[] = [null];
+      while (queue.length) {
+        const current = queue.shift()!;
+        const key = current.getAttribute('data-morph-key');
+        const isInKeyedElement = queueWithinKey.shift()! || key;
 
-    if (this.props.percent === 0 || this.props.percent === 1) {
-      this.cachedRects.clear();
-      this.c.innerHTML = '';
-    }
-
-    allKeys.forEach((key: string) => {
-      const a = aMorphs.get(key);
-      const b = bMorphs.get(key);
-
-      // Transformations must be relative to the nearest corresponding ancestor of both elements.
-      // (Or just the one, if there is only one.)
-      //const parents = nearestCorrespondingParentsOfBoth(a, b);
-      let parentKey: string;
-      let parentA: HTMLElement;
-      let parentB: HTMLElement;
-      let parentsA = nearestCorrespondingParentKeys(a).filter(k => aMorphs.has(k) && bMorphs.has(k));
-      let parentsB = nearestCorrespondingParentKeys(b).filter(k => aMorphs.has(k) && bMorphs.has(k));
-      // Find the nearest common ancestor of both. That's the [i - 1] comparison as described here:
-      // http://stackoverflow.com/questions/1484473. However, in the case where one of the arrays
-      // is empty (meaning the element is simply not present there), we want to return the outermost
-      // parent that is contained in both A and B. That's the [i] comparison.
-      for (let i = 0; ; i++) {
-        if (parentsA[i] !== parentsB[i] || !parentsA[i] || !parentsB[i]) {
-          parentKey = parentsA[i - 1] || parentsA[i] || parentsB[i];
-          parentA = aMorphs.get(parentKey)!;
-          parentB = bMorphs.get(parentKey)!;
-          break;
-        }
-      }
-
-      let rectA = a && this.getRect(a);
-      let rectB = b && this.getRect(b);
-      let rectParentA = this.getRect(parentA);
-      let rectParentB = this.getRect(parentB);
-      let startOpacity = 1;
-      let endOpacity = 1;
-
-      if (!rectA || (rectA.width === 0 && rectA.height === 0)) {
-        rectA = proportionRect(rectParentB, rectB!, rectParentA);
-        startOpacity = 0;
-      }
-      if (!rectB || (rectB.width === 0 && rectB.height === 0)) {
-        rectB = rectA;
-        rectParentB = rectParentA;
-        endOpacity = 0;
-      }
-
-      const from: any = {
-        x: rectA!.left - rectParentA.left - parseInt(getComputedStyle(parentA).borderLeftWidth || '0'),
-        y: rectA!.top - rectParentA.top - parseInt(getComputedStyle(parentA).borderTopWidth || '0'),
-        width: rectA!.width,
-        height: rectA!.height,
-        opacity: startOpacity,
-      };
-      const to: any = {
-        x: rectB!.left - rectParentB.left - parseInt(getComputedStyle(parentB).borderLeftWidth || '0'),
-        y: rectB!.top - rectParentB.top - parseInt(getComputedStyle(parentB).borderTopWidth || '0'),
-        width: rectB!.width,
-        height: rectB!.height,
-        opacity: endOpacity,
-      };
-      const styleProps = [/*'width', 'height',*/ 'fontSize', 'fontWeight', 'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom'];
-      if (a && b) {
-        const styleA = getComputedStyle(a) as any;
-        const styleB = getComputedStyle(b) as any;
-        styleProps.forEach((prop) => {
-          if (styleA[prop] !== styleB[prop]) {
-            //key === 'favorite' && console.log('prop?', prop, styleA[prop], styleB[prop], rectA!.height, rectB!.height);
-            from[prop] = styleA[prop];
-            to[prop] = styleB[prop];
+        if (key) {
+          if (keys.indexOf(key) === -1) {
+            keys.push(key);
           }
-        });
-      }
-
-      let el = this.c.querySelector(`[data-morph-key="${key}-C"]`) as HTMLElement | undefined;
-      if (!el) {
-        el = (b || a)!.cloneNode(true) as HTMLElement//freezeStyles((b || a)! as HTMLElement, (b || a)!.cloneNode(true) as HTMLElement);
-        el.classList.add('hideMorphing');
-        el.setAttribute('data-morph-key', key + '-C');
-        el.style.position = 'absolute';
-        el.style.top = '0';
-        el.style.left = '0';
-        el.style.margin = '0';
-        el.style.visibility = 'visible'; // override hideMorphing!
-        this.c.appendChild(el);
-      }
-
-      animMap.set(key, {
-        key,
-        parentKey,
-        el,
-        from,
-        to,
-      });
-    });
-
-    // Assemble the tree.
-    for (let anim of animMap.values()) {
-      let animParent = animMap.get(anim.parentKey);
-      (animParent && animParent.el || this.c).appendChild(anim.el);
-    }
-
-    function addUnit(key: string, value: number) {
-      if (key === 'opacity' || key === 'fontWeight') {
-        return value + '';
-      } else {
-        return value + 'px';
-      }
-    }
-
-    // Apply transformations.
-    [...animMap.values()].forEach((anim) => {
-      for (let key in anim.from) {
-        if (key === 'x' || key === 'y') {
-          continue;
+          keyToElements.set(key, current);
+        } else if (!isInKeyedElement) {
+          unkeyedElements.push(current);
         }
-        (anim.el.style as any)[key] = addUnit(key, lerp(parseFloat(anim.from[key]), parseFloat(anim.to[key]), this.props.percent));
+        for (let i = 0; i < current.children.length; i++) {
+          queue.push(current.children[i] as HTMLElement);
+          queueWithinKey.push(key || isInKeyedElement);
+        }
       }
-      const x = lerp(anim.from.x, anim.to.x, this.props.percent);
-      const y = lerp(anim.from.y, anim.to.y, this.props.percent);
-      anim.el.style.transform = `translate(${x}px, ${y}px)`;
+      return {
+        keyToElements,
+        unkeyedElements
+      }
+    }
+
+    let starter = getKeyedElements(this.startEl);
+    let ender = getKeyedElements(this.endEl);
+
+    let keys = _.uniq([...starter.keyToElements.keys(), ...ender.keyToElements.keys()]);
+
+    const t = this.props.percent;
+
+    function clobber(el: HTMLElement, property: any, opacity: number) {
+      let expando = (el as any)._temp || ((el as any)._temp = {});
+      if (!expando[property]) {
+        expando[property] = getComputedStyle(el)[property];
+      }
+      const m = /rgba?\((\d+),\s*(\d+),\s*(\d+),?\s*?(.*?)\)/.exec(expando[property]) || [];
+      const v = `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${opacity * parseFloat(m[4] || '1')})`;
+      el.style[property] = v;
+    }
+
+    function fakeOpacity(el: HTMLElement, opacity: number) {
+      ['borderLeftColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor',
+       'color', 'backgroundColor'].forEach((prop) => {
+         clobber(el, prop, opacity);
+       })
+    }
+
+    // starter.unkeyedElements.forEach((el) => {
+    //   //el.style.border = '1px solid red'
+    //   let opacity = Math.max(0, Math.min(1, rescale(t, 0, 1, 1, -1)));
+    //   fakeOpacity(el, opacity);
+    //   //el.style.filter = `opacity(${opacity})`;
+    // });
+    // ender.unkeyedElements.forEach((el) => {
+    //   let opacity = Math.max(0, Math.min(1, rescale(t, 0, 1, 1, -1)));
+    //   fakeOpacity(el, opacity);
+    //   //el.style.filter = `opacity(${opacity})`;
+    // });
+
+    keys.forEach((key) => {
+      let startEl = starter.keyToElements.get(key);
+      let endEl = ender.keyToElements.get(key);
+
+
+      startEl && (startEl.style.transformOrigin = '0 0');
+      endEl && (endEl.style.transformOrigin = '0 0');
+
+      let fromRect = getUntransformedClientRect(startEl) || getUntransformedClientRect(endEl);
+      let toRect = getUntransformedClientRect(endEl) || getUntransformedClientRect(startEl);
+
+      if (!fromRect || !toRect) {
+        return;
+      }
+
+      startEl && (startEl.style.transform = matrixToString(decompose(multiply(
+        this.computeRelativeParentInverse(startEl),
+        compose(interpolateDecomposedTransforms(decompose(IDENTITY), decompose([
+        toRect.width / fromRect.width, 0, 0,
+        toRect.height / fromRect.height,
+        toRect.left - fromRect.left,
+        toRect.top - fromRect.top,
+      ]), t))))));
+
+      startEl && (startEl.style.opacity = (1 - t)+'');
+      endEl && (endEl.style.opacity = t+'');
+
+      endEl && (endEl.style.transform = matrixToString(decompose(multiply(
+        this.computeRelativeParentInverse(endEl),
+        compose(interpolateDecomposedTransforms(decompose([
+        fromRect.width / toRect.width, 0, 0,
+        fromRect.height / toRect.height,
+        fromRect.left - toRect.left,
+        fromRect.top - toRect.top,
+      ]), decompose(IDENTITY), t))))));
     });
+  }
+
+
+  computeRelativeParentInverse(el: HTMLElement) {
+    const matrix = invert(getCumulativeTransformMatrix(el.parentElement!, this.el));
+    matrix[4] -= parseFloat(getComputedStyle(el.parentElement!).borderLeftWidth || '0');
+    matrix[5] -= parseFloat(getComputedStyle(el.parentElement!).borderTopWidth || '0');
+    matrix[4] += -el.offsetLeft + el.offsetLeft * matrix[0];
+    matrix[5] += -el.offsetTop + el.offsetTop * matrix[3];
+    return matrix;
   }
 
   render() {
     const t = this.props.percent;
     const c = React.Children.toArray(this.props.children);
-    const isMorphing = t > 0 && t < 1;
-    return <div style={{position: 'relative', flexGrow: 1}}>
-      <div ref={el => this.a = el} data-morph-key="ROOT" className={isMorphing ? 'hideMorphing' : ''} style={{
+    return <div ref={el => this.el = el} style={{ position: 'relative', flexGrow: 1 }}>
+      <div style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
-        opacity: lerp(1, 0, t * 2),
+        opacity: lerp(1, 0, t),
         pointerEvents: t === 0 ? 'all' : 'none'//visibility: t === 0 ? 'visible' : 'hidden'
       }}>{c[0]}</div>
-      <div ref={el => this.b = el} data-morph-key="ROOT" className={isMorphing ? 'hideMorphing' : ''} style={{
+      <div style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
-        opacity: lerp(0, 1, Math.max(0, (t - 0.5) * 2)),
+        opacity: lerp(0, 1, t),
         pointerEvents: t === 1 ? 'all' : 'none'
       }}>{c[1]}</div>
-      <div ref={el => this.c = el} style={{
-        position: 'absolute',
-        top: 0, left: 0, width: '100%', height: '100%',
-        display: t > 0 && t < 1 ? 'block' : 'none'
-      }}></div>
     </div>;
   }
 }
 
 injectGlobal`
-  .hideMorphing [data-morph-key] {
-    visibility: hidden;
-  }
   span[data-morph-key] {
     display: inline-block;
   }
