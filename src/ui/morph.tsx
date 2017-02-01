@@ -276,14 +276,15 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
   render() {
     const t = this.props.percent;
     const c = React.Children.toArray(this.props.children);
+    const isMorphing = t > 0 && t < 1;
     return <div ref={el => this.el = el} style={{ position: 'relative', flexGrow: 1 }}>
-      <div ref={el => this.startEl = el} className="hideMorphing" style={{
+      <div ref={el => this.startEl = el} className={isMorphing ? 'hideMorphing' : ''} style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
         opacity: t > 0.5 ? 0 : rescale(t, 0, 0.5, 1, 0),
         pointerEvents: t === 0 ? 'all' : 'none'//visibility: t === 0 ? 'visible' : 'hidden'
       }}>{c[0]}</div>
-      <div ref={el => this.endEl = el} className="hideMorphing" style={{
+      <div ref={el => this.endEl = el} className={isMorphing ? 'hideMorphing' : ''} style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
         opacity: t < 0.5 ? 0 : rescale(t, 0.5, 1, 0, 1),
@@ -292,11 +293,13 @@ export class MorphTween extends React.Component<MorphTweenProps, any> {
       <div ref={el => this.startAnimEl = el} style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
+        visibility: isMorphing ? 'visible' : 'hidden',
         pointerEvents: 'none'
       }}>{c[0]}</div>
       <div ref={el => this.endAnimEl = el} style={{
         position: 'absolute',
         top: 0, left: 0, width: '100%', height: '100%',
+        visibility: isMorphing ? 'visible' : 'hidden',
         pointerEvents: 'none'
       }}>{c[1]}</div>
     </div>;
